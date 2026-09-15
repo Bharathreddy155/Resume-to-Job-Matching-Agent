@@ -111,13 +111,12 @@ All Backend Unit Tests Passed Successfully! 🎉
 
 ---
 
-## 👥 Hackathon Team Division of Responsibilities
+## 👥 Hackathon 2-Person Division of Responsibilities
 
-| Role | Member | Primary Focus | Key Files |
+| Role | Member | Primary Focus | Key Files & Ownership |
 | :--- | :--- | :--- | :--- |
-| **Backend & Pipeline Lead** | **Member 1** | Ingestion pipelines, API endpoints, export features | `backend/parsers.py`, `backend/main.py`, `start.sh` |
-| **AI & Semantic Engine** | **Member 2** | Skill ontology, scoring weights, Gemini prompt design | `backend/skill_ontology.py`, `backend/matcher.py`, `backend/ai_explainer.py` |
-| **Frontend & Demo Lead** | **Member 3** | UI/UX polish, animations, presentation pitch | `frontend/src/components/`, `frontend/src/index.css` |
+| **Backend & AI Engine Lead** | **Member 1 (You)** | Document parsing (PDF/DOCX), skill ontology, multi-factor scoring, Gemini AI reasoning, and API endpoints | `backend/parsers.py`, `backend/matcher.py`, `backend/skill_ontology.py`, `backend/ai_explainer.py`, `backend/main.py`, `start.sh` |
+| **Frontend UI/UX & Pitch Lead** | **Member 2 (Teammate)** | Ultra-modern React/Vite dashboard, Candidate & Recruiter views, animated score dials, gap matrix visualizer, and 3-min hackathon pitch | `frontend/src/components/CandidateView.jsx`, `frontend/src/components/RecruiterView.jsx`, `frontend/src/components/ScoreDial.jsx`, `frontend/src/index.css` |
 
 ---
 
