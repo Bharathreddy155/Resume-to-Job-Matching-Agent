@@ -47,12 +47,17 @@ export default function App() {
           const resumes = data.resumes || [];
           setAllResumes(resumes);
 
-          // Proactively run an initial match for the first candidate in pool
+          // Proactively run initial matches for both Candidate View and Recruiter Leaderboard
           if (resumes.length > 0) {
             handleMatchSingle({
               resume_text: resumes[0].text,
               job_description: initialJob.description,
               candidate_name: resumes[0].name
+            });
+
+            handleMatchBatch({
+              job_description: initialJob.description,
+              candidates: resumes
             });
           }
         }
@@ -66,6 +71,13 @@ export default function App() {
     const job = allRoles.find(j => j.id === jobId);
     if (job) {
       setJobDescription(job.description);
+      // Re-run batch match for new target role
+      if (allResumes.length > 0) {
+        handleMatchBatch({
+          job_description: job.description,
+          candidates: allResumes
+        });
+      }
     }
   };
 
@@ -80,6 +92,13 @@ export default function App() {
     }
     setSelectedJobId(newRole.id);
     setJobDescription(newRole.description);
+
+    if (allResumes.length > 0) {
+      handleMatchBatch({
+        job_description: newRole.description,
+        candidates: allResumes
+      });
+    }
   };
 
   // Delete custom role
@@ -116,13 +135,20 @@ export default function App() {
     }
 
     if (data.resume && data.resume.text && data.resume.text.trim()) {
-      setAllResumes(prev => [data.resume, ...prev.filter(r => r.id !== data.resume.id)]);
+      const updatedList = [data.resume, ...allResumes.filter(r => r.id !== data.resume.id)];
+      setAllResumes(updatedList);
       
       // Auto-trigger single match with current job description
       handleMatchSingle({
         resume_text: data.resume.text,
         job_description: jobDescription,
         candidate_name: data.resume.name
+      });
+
+      // Auto-trigger batch match with updated candidates pool!
+      handleMatchBatch({
+        job_description: jobDescription,
+        candidates: updatedList
       });
     }
 

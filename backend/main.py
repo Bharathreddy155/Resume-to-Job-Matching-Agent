@@ -201,11 +201,15 @@ def match_batch_resumes(payload: MatchBatchRequest):
     ranked_candidates = []
 
     for idx, c in enumerate(payload.candidates):
-        metadata = c.metadata or extract_candidate_metadata(c.text)
+        cand_text = (c.text or "").strip()
+        if not cand_text:
+            continue
+
+        metadata = c.metadata or extract_candidate_metadata(cand_text)
         cand_name = c.name or metadata.get("name", f"Candidate #{idx + 1}")
 
         match_res = compute_overall_compatibility(
-            c.text,
+            cand_text,
             payload.job_description,
             metadata,
             jd_analysis

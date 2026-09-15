@@ -60,6 +60,13 @@ export default function RecruiterView({
     }
   }, [resumes]);
 
+  // Automatically execute batch evaluation when candidateList or jobDescription is ready
+  useEffect(() => {
+    if (!batchResults && !batchLoading && candidateList.length > 0 && jobDescription && jobDescription.trim()) {
+      handleRunBatch();
+    }
+  }, [candidateList, jobDescription]);
+
   // Handle multi-file parsing & persistence into SQLite database
   const processFiles = async (files) => {
     if (!files || files.length === 0) return;
@@ -335,6 +342,59 @@ export default function RecruiterView({
         </div>
 
       </div>
+
+      {/* Loading State Banner */}
+      {batchLoading && (
+        <div className="glass-card" style={{ padding: '40px', textAlign: 'center' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: '#eff6ff',
+            color: 'var(--accent-blue)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '16px'
+          }}>
+            <Sparkles size={24} color="var(--accent-blue)" />
+          </div>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '6px' }}>
+            Evaluating Multi-Factor Candidate Rankings...
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            Comparing {candidateList.length} candidate profiles across semantic skill ontology, experience, and domain context.
+          </p>
+        </div>
+      )}
+
+      {/* Ready to Rank Prompt if no results yet */}
+      {!batchLoading && !batchResults && (
+        <div className="glass-card" style={{ padding: '40px', textAlign: 'center' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: '#fffbeb',
+            color: '#d97706',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '16px'
+          }}>
+            <Trophy size={24} color="#d97706" />
+          </div>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '6px' }}>
+            Leaderboard Ready to Generate
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+            Ready to rank {candidateList.length} candidates against the active job description.
+          </p>
+          <button onClick={handleRunBatch} className="primary-btn" style={{ margin: '0 auto' }}>
+            <Sparkles size={16} /> Rank Candidates Now
+          </button>
+        </div>
+      )}
 
       {/* Leaderboard Table & Filtering Bar */}
       {batchResults && (
