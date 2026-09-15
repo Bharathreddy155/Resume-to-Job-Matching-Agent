@@ -237,7 +237,7 @@ export default function CandidateView({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Remove "${s.name}" from database?`)) {
+                          if (window.confirm(`Remove "${s.name}" from database?`)) {
                             onDeleteResume(s.id);
                           }
                         }}

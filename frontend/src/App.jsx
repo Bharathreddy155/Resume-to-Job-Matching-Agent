@@ -6,6 +6,59 @@ import CustomRoleModal from './components/CustomRoleModal';
 
 const API_BASE = 'http://localhost:8000';
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error("MatchPulse ErrorBoundary caught error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ maxWidth: '640px', margin: '60px auto', padding: '36px', textAlign: 'center' }} className="glass-card">
+          <div style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: '50%',
+            background: '#fee2e2',
+            color: '#dc2626',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '16px',
+            fontSize: '1.5rem',
+            fontWeight: 800
+          }}>
+            !
+          </div>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
+            Encountered Display Issue
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '24px', lineHeight: 1.5 }}>
+            {this.state.error?.message || 'An unexpected error occurred while rendering the view.'}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            className="primary-btn"
+            style={{ margin: '0 auto' }}
+          >
+            Refresh & Recover
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [activeMode, setActiveMode] = useState('candidate'); // 'candidate' | 'recruiter'
   const [sampleJobs, setSampleJobs] = useState([]);
@@ -197,6 +250,9 @@ export default function App() {
 
   // Run batch match (Recruiter View)
   const handleMatchBatch = async (payload) => {
+    if (!payload?.candidates || payload.candidates.length === 0 || !payload.job_description) {
+      return null;
+    }
     setBatchLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/match-batch`, {
@@ -205,10 +261,17 @@ export default function App() {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (!res.ok || !data || !Array.isArray(data.candidates)) {
+        console.error('Batch match failed:', data);
+        setBatchResults(null);
+        return null;
+      }
       setBatchResults(data);
       return data;
     } catch (err) {
-      console.error('Batch match failed:', err);
+      console.error('Batch match network failed:', err);
+      setBatchResults(null);
+      return null;
     } finally {
       setBatchLoading(false);
     }
@@ -235,31 +298,33 @@ export default function App() {
 
       {/* Main Container */}
       <main style={{ flex: 1, maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '32px 24px' }}>
-        {activeMode === 'candidate' ? (
-          <CandidateView
-            jobDescription={jobDescription}
-            setJobDescription={setJobDescription}
-            resumes={allResumes}
-            targetJob={targetJob}
-            onMatchSingle={handleMatchSingle}
-            onUploadResume={handleUploadResume}
-            onDeleteResume={handleDeleteResume}
-            matchLoading={matchLoading}
-            matchResult={candidateMatchResult}
-          />
-        ) : (
-          <RecruiterView
-            jobDescription={jobDescription}
-            setJobDescription={setJobDescription}
-            resumes={allResumes}
-            targetJob={targetJob}
-            onMatchBatch={handleMatchBatch}
-            onUploadResume={handleUploadResume}
-            onDeleteResume={handleDeleteResume}
-            batchLoading={batchLoading}
-            batchResults={batchResults}
-          />
-        )}
+        <ErrorBoundary>
+          {activeMode === 'candidate' ? (
+            <CandidateView
+              jobDescription={jobDescription}
+              setJobDescription={setJobDescription}
+              resumes={allResumes}
+              targetJob={targetJob}
+              onMatchSingle={handleMatchSingle}
+              onUploadResume={handleUploadResume}
+              onDeleteResume={handleDeleteResume}
+              matchLoading={matchLoading}
+              matchResult={candidateMatchResult}
+            />
+          ) : (
+            <RecruiterView
+              jobDescription={jobDescription}
+              setJobDescription={setJobDescription}
+              resumes={allResumes}
+              targetJob={targetJob}
+              onMatchBatch={handleMatchBatch}
+              onUploadResume={handleUploadResume}
+              onDeleteResume={handleDeleteResume}
+              batchLoading={batchLoading}
+              batchResults={batchResults}
+            />
+          )}
+        </ErrorBoundary>
       </main>
 
       {/* Custom Role Creation & Management Modal */}

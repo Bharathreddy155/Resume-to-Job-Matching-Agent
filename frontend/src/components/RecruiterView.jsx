@@ -107,7 +107,22 @@ export default function RecruiterView({
     processFiles(files);
   };
 
+  const handleResetToSamples = () => {
+    const samples = (resumes || []).filter(r => r.is_sample);
+    const pool = samples.length > 0 ? samples : (resumes || []);
+    setCandidateList(
+      pool.map(r => ({
+        id: r.id,
+        name: r.name,
+        text: r.text,
+        filename: r.filename || r.name + '.pdf',
+        is_sample: r.is_sample
+      }))
+    );
+  };
+
   const handleRunBatch = () => {
+    if (!candidateList || candidateList.length === 0 || !jobDescription) return;
     onMatchBatch({
       job_description: jobDescription,
       candidates: candidateList
@@ -116,24 +131,34 @@ export default function RecruiterView({
 
   // Sorting & Filtering logic
   const filteredCandidates = (batchResults?.candidates || []).filter(c => {
-    const matchesMinScore = c.overall_score >= minScoreFilter;
+    if (!c) return false;
+    const score = typeof c.overall_score === 'number' ? c.overall_score : 0;
+    const matchesMinScore = score >= minScoreFilter;
     let matchesTier = true;
-    if (tierFilter === 'high') matchesTier = c.overall_score >= 80;
-    if (tierFilter === 'mod') matchesTier = c.overall_score >= 60 && c.overall_score < 80;
-    if (tierFilter === 'low') matchesTier = c.overall_score < 60;
+    if (tierFilter === 'high') matchesTier = score >= 80;
+    if (tierFilter === 'mod') matchesTier = score >= 60 && score < 80;
+    if (tierFilter === 'low') matchesTier = score < 60;
 
-    const queryLower = searchQuery.toLowerCase();
-    const matchesQuery = !searchQuery || 
-      c.name.toLowerCase().includes(queryLower) ||
-      c.exact_matches.some(m => m.skill.toLowerCase().includes(queryLower)) ||
-      (c.semantic_matches && c.semantic_matches.some(m => m.skill.toLowerCase().includes(queryLower)));
+    const queryLower = (searchQuery || '').trim().toLowerCase();
+    const exactMatches = Array.isArray(c.exact_matches) ? c.exact_matches : [];
+    const semanticMatches = Array.isArray(c.semantic_matches) ? c.semantic_matches : [];
+    const candName = (c.name || '').toLowerCase();
+
+    const matchesQuery = !queryLower || 
+      candName.includes(queryLower) ||
+      exactMatches.some(m => (m?.skill || '').toLowerCase().includes(queryLower)) ||
+      semanticMatches.some(m => (m?.skill || '').toLowerCase().includes(queryLower) || (m?.matched_via || '').toLowerCase().includes(queryLower));
 
     return matchesMinScore && matchesTier && matchesQuery;
   }).sort((a, b) => {
     let diff = 0;
-    if (sortField === 'rank') diff = a.rank - b.rank;
-    if (sortField === 'score') diff = b.overall_score - a.overall_score;
-    if (sortField === 'exp') diff = b.stats.candidate_exp_years - a.stats.candidate_exp_years;
+    if (sortField === 'rank') diff = (a?.rank ?? 0) - (b?.rank ?? 0);
+    if (sortField === 'score') diff = (b?.overall_score ?? 0) - (a?.overall_score ?? 0);
+    if (sortField === 'exp') {
+      const expA = a?.stats?.candidate_exp_years ?? a?.metadata?.detected_experience_years ?? 0;
+      const expB = b?.stats?.candidate_exp_years ?? b?.metadata?.detected_experience_years ?? 0;
+      diff = expB - expA;
+    }
     return sortAsc ? diff : -diff;
   });
 
@@ -152,11 +177,11 @@ export default function RecruiterView({
       name: c.name,
       overall_score: c.overall_score,
       tier: c.match_tier,
-      experience_years: c.stats.candidate_exp_years,
-      exact_matches: c.exact_matches.map(m => m.skill),
-      semantic_matches: (c.semantic_matches || []).map(m => `${m.matched_via} -> ${m.skill}`),
-      missing_critical: c.missing_critical.map(m => m.skill),
-      summary: c.explanation?.summary
+      experience_years: c.stats?.candidate_exp_years ?? c.metadata?.detected_experience_years ?? 0,
+      exact_matches: (c.exact_matches || []).map(m => m?.skill || m),
+      semantic_matches: (c.semantic_matches || []).map(m => `${m?.matched_via || ''} -> ${m?.skill || ''}`),
+      missing_critical: (c.missing_critical || []).map(m => m?.skill || m),
+      summary: c.explanation?.summary || ''
     }));
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -223,7 +248,7 @@ export default function RecruiterView({
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
             <span>Target Role: <strong style={{ color: 'var(--text-muted)' }}>{targetJob?.department || 'Engineering'}</strong></span>
-            <span>{jobDescription.length.toLocaleString()} chars</span>
+            <span>{(jobDescription || '').length.toLocaleString()} chars</span>
           </div>
         </div>
 
@@ -397,7 +422,7 @@ export default function RecruiterView({
       )}
 
       {/* Leaderboard Table & Filtering Bar */}
-      {batchResults && (
+      {batchResults && Array.isArray(batchResults.candidates) && (
         <div className="glass-card" style={{ padding: '28px' }}>
           
           {/* Header & Filter Controls */}
@@ -418,7 +443,7 @@ export default function RecruiterView({
               <div>
                 <h3 style={{ fontSize: '1.35rem' }}>Ranked Candidate Leaderboard</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Evaluated {batchResults.total_candidates} candidates across {batchResults.required_skills_count} target competencies
+                  Evaluated {batchResults.total_candidates ?? batchResults.candidates.length} candidates across {batchResults.required_skills_count ?? 0} target competencies
                 </p>
               </div>
             </div>
@@ -441,7 +466,7 @@ export default function RecruiterView({
                     boxShadow: tierFilter === 'all' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
-                  All ({batchResults.candidates.length})
+                  All ({batchResults.candidates?.length || 0})
                 </button>
                 <button
                   onClick={() => setTierFilter('high')}
@@ -546,13 +571,13 @@ export default function RecruiterView({
 
                   return (
                     <tr
-                      key={cand.id}
+                      key={cand.id || `cand_${cand.rank}`}
                       style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        borderBottom: '1px solid var(--border-subtle)',
                         transition: 'background 0.2s',
                         cursor: 'pointer'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                       {/* Rank Badge */}
@@ -570,8 +595,8 @@ export default function RecruiterView({
                             borderRadius: '8px',
                             fontWeight: 800,
                             fontSize: '0.88rem',
-                            background: rankClass ? undefined : 'rgba(255,255,255,0.05)',
-                            color: rankClass ? undefined : '#94a3b8'
+                            background: rankClass ? undefined : '#f1f5f9',
+                            color: rankClass ? undefined : 'var(--text-muted)'
                           }}
                         >
                           {rankIcon} #{cand.rank}
@@ -580,9 +605,9 @@ export default function RecruiterView({
 
                       {/* Candidate Name & Education */}
                       <td style={{ padding: '14px 14px' }}>
-                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.96rem' }}>{cand.name}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.96rem' }}>{cand.name}</div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {cand.metadata.education}
+                          {cand.metadata?.education || 'Not specified'}
                         </div>
                       </td>
 
@@ -593,11 +618,11 @@ export default function RecruiterView({
                             fontFamily: 'var(--font-heading)',
                             fontSize: '1.25rem',
                             fontWeight: 800,
-                            color: `var(--accent-${cand.tier_color})`
+                            color: `var(--accent-${cand.tier_color || 'blue'})`
                           }}>
                             {cand.overall_score}%
                           </span>
-                          <span className={`badge badge-${cand.tier_color}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                          <span className={`badge badge-${cand.tier_color || 'blue'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
                             {cand.match_tier}
                           </span>
                         </div>
@@ -605,30 +630,30 @@ export default function RecruiterView({
 
                       {/* Experience */}
                       <td style={{ padding: '14px 14px' }}>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>
-                          {cand.stats.candidate_exp_years} yrs
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-main)' }}>
+                          {cand.stats?.candidate_exp_years ?? cand.metadata?.detected_experience_years ?? 0} yrs
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
-                          Req: {cand.stats.required_exp_years} yrs
+                          Req: {cand.stats?.required_exp_years ?? 0} yrs
                         </div>
                       </td>
 
                       {/* Verified Skills (Exact + Semantic Bridges) */}
                       <td style={{ padding: '14px 14px' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '260px' }}>
-                          {cand.exact_matches.slice(0, 3).map((m, i) => (
+                          {(cand.exact_matches || []).slice(0, 3).map((m, i) => (
                             <span key={i} className="badge badge-emerald" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
-                              {m.skill}
+                              {m?.skill || m}
                             </span>
                           ))}
-                          {cand.semantic_matches && cand.semantic_matches.slice(0, 2).map((m, i) => (
+                          {(cand.semantic_matches || []).slice(0, 2).map((m, i) => (
                             <span key={`sem_${i}`} className="badge badge-blue" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
-                              ⚡ {m.skill}
+                              ⚡ {m?.skill || m}
                             </span>
                           ))}
-                          {(cand.exact_matches.length + (cand.semantic_matches?.length || 0)) > 5 && (
+                          {((cand.exact_matches || []).length + (cand.semantic_matches || []).length) > 5 && (
                             <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', alignSelf: 'center' }}>
-                              +{(cand.exact_matches.length + (cand.semantic_matches?.length || 0)) - 5} more
+                              +{((cand.exact_matches || []).length + (cand.semantic_matches || []).length) - 5} more
                             </span>
                           )}
                         </div>
@@ -636,20 +661,20 @@ export default function RecruiterView({
 
                       {/* Critical Gaps */}
                       <td style={{ padding: '14px 14px' }}>
-                        {cand.missing_critical.length === 0 ? (
+                        {(cand.missing_critical || []).length === 0 ? (
                           <span className="badge badge-emerald" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
                             ✓ None
                           </span>
                         ) : (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '180px' }}>
-                            {cand.missing_critical.slice(0, 2).map((g, i) => (
+                            {(cand.missing_critical || []).slice(0, 2).map((g, i) => (
                               <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
-                                {g.skill}
+                                {g?.skill || g}
                               </span>
                             ))}
-                            {cand.missing_critical.length > 2 && (
+                            {(cand.missing_critical || []).length > 2 && (
                               <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                                +{cand.missing_critical.length - 2}
+                                +{(cand.missing_critical || []).length - 2}
                               </span>
                             )}
                           </div>
@@ -719,7 +744,7 @@ export default function RecruiterView({
                     </span>
                   </div>
                   <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Experience: {selectedCandidateModal.stats.candidate_exp_years} yrs • Degree: {selectedCandidateModal.metadata.education}
+                    Experience: {selectedCandidateModal.stats?.candidate_exp_years ?? selectedCandidateModal.metadata?.detected_experience_years ?? 0} yrs • Degree: {selectedCandidateModal.metadata?.education || 'Not specified'}
                   </div>
                 </div>
               </div>
@@ -733,7 +758,7 @@ export default function RecruiterView({
             </div>
 
             {/* AI Executive Summary */}
-            <div className="glass-panel" style={{ padding: '18px', marginBottom: '20px', borderLeft: `4px solid var(--accent-${selectedCandidateModal.tier_color})`, background: '#f8fafc' }}>
+            <div className="glass-panel" style={{ padding: '18px', marginBottom: '20px', borderLeft: `4px solid var(--accent-${selectedCandidateModal.tier_color || 'blue'})`, background: '#f8fafc' }}>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Executive Evaluation Narrative
               </div>
@@ -747,25 +772,25 @@ export default function RecruiterView({
               <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Skills (50%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                  {selectedCandidateModal.breakdown.skill_match}%
+                  {selectedCandidateModal.breakdown?.skill_match ?? 0}%
                 </div>
               </div>
               <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Experience (25%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-blue)' }}>
-                  {selectedCandidateModal.breakdown.experience_alignment}%
+                  {selectedCandidateModal.breakdown?.experience_alignment ?? 0}%
                 </div>
               </div>
               <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Domain (15%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0284c7' }}>
-                  {selectedCandidateModal.breakdown.domain_context}%
+                  {selectedCandidateModal.breakdown?.domain_context ?? 0}%
                 </div>
               </div>
               <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Degree (10%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-emerald)' }}>
-                  {selectedCandidateModal.breakdown.education_credentials}%
+                  {selectedCandidateModal.breakdown?.education_credentials ?? 0}%
                 </div>
               </div>
             </div>
@@ -776,12 +801,12 @@ export default function RecruiterView({
               {/* Direct Matches */}
               <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={16} /> Direct Matches ({selectedCandidateModal.exact_matches.length})
+                  <CheckCircle2 size={16} /> Direct Matches ({(selectedCandidateModal.exact_matches || []).length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {selectedCandidateModal.exact_matches.map((m, idx) => (
+                  {(selectedCandidateModal.exact_matches || []).map((m, idx) => (
                     <span key={idx} className="badge badge-emerald" style={{ fontSize: '0.74rem' }}>
-                      {m.skill}
+                      {m?.skill || m}
                     </span>
                   ))}
                 </div>
@@ -790,17 +815,17 @@ export default function RecruiterView({
               {/* Semantic Bridges */}
               <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={16} /> Semantic Bridges ({selectedCandidateModal.semantic_matches?.length || 0})
+                  <Sparkles size={16} /> Semantic Bridges ({(selectedCandidateModal.semantic_matches || []).length})
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {(selectedCandidateModal.semantic_matches || []).length === 0 ? (
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>No semantic bridges applied</span>
                   ) : (
-                    selectedCandidateModal.semantic_matches.map((m, idx) => (
+                    (selectedCandidateModal.semantic_matches || []).map((m, idx) => (
                       <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{m.matched_via}</span>
+                        <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{m?.matched_via || ''}</span>
                         <ArrowRight size={12} color="var(--accent-blue)" />
-                        <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>{m.skill}</span>
+                        <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>{m?.skill || ''}</span>
                       </div>
                     ))
                   )}
@@ -810,15 +835,15 @@ export default function RecruiterView({
               {/* Critical Missing Skills */}
               <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-rose)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <AlertTriangle size={16} /> Critical Gaps ({selectedCandidateModal.missing_critical.length})
+                  <AlertTriangle size={16} /> Critical Gaps ({(selectedCandidateModal.missing_critical || []).length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {selectedCandidateModal.missing_critical.length === 0 ? (
+                  {(selectedCandidateModal.missing_critical || []).length === 0 ? (
                     <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)' }}>Zero critical gaps</span>
                   ) : (
-                    selectedCandidateModal.missing_critical.map((m, idx) => (
+                    (selectedCandidateModal.missing_critical || []).map((m, idx) => (
                       <span key={idx} className="badge badge-rose" style={{ fontSize: '0.74rem' }}>
-                        {m.skill}
+                        {m?.skill || m}
                       </span>
                     ))
                   )}
