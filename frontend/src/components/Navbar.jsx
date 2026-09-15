@@ -1,20 +1,30 @@
 import React from 'react';
-import { Sparkles, Users, UserCheck, Key, Zap, CheckCircle2, Mic } from 'lucide-react';
+import { Sparkles, Users, UserCheck, Zap, Plus } from 'lucide-react';
 
 export default function Navbar({
   activeMode,
   setActiveMode,
-  sampleJobs,
+  roles = [],
   selectedJobId,
   onSelectJob,
-  onOpenKeyModal,
-  onOpenPitchModal,
-  hasApiKey
+  onOpenCustomRoleModal
 }) {
+  const handleDropdownChange = (e) => {
+    const val = e.target.value;
+    if (val === '__custom_new__') {
+      onOpenCustomRoleModal();
+    } else {
+      onSelectJob(val);
+    }
+  };
+
+  const standardRoles = roles.filter(r => !r.isCustom);
+  const customRoles = roles.filter(r => r.isCustom);
+
   return (
     <header style={{
       borderBottom: '1px solid var(--border-subtle)',
-      background: 'rgba(255, 255, 255, 0.92)',
+      background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       position: 'sticky',
@@ -62,7 +72,7 @@ export default function Navbar({
               </span>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Intelligent Semantic Resume-to-Job Hiring Engine
+              Intelligent Semantic Resume-to-Job Matching System
             </div>
           </div>
         </div>
@@ -92,66 +102,72 @@ export default function Navbar({
           </button>
         </div>
 
-        {/* Demo Roles, Key, & Pitch Assistant */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          
-          {/* Preset Demo Job Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <Zap size={14} color="var(--accent-amber)" /> Role:
-            </span>
-            <select
-              value={selectedJobId}
-              onChange={(e) => onSelectJob(e.target.value)}
-              style={{
-                background: '#ffffff',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-main)',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                fontSize: '0.84rem',
-                outline: 'none',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-sm)'
-              }}
-            >
-              {sampleJobs.map((j) => (
+        {/* Role Selector & Custom Role Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+            <Zap size={14} color="var(--accent-amber)" /> Target Role:
+          </span>
+
+          <select
+            value={selectedJobId}
+            onChange={handleDropdownChange}
+            style={{
+              background: '#ffffff',
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-main)',
+              padding: '7px 12px',
+              borderRadius: '8px',
+              fontSize: '0.84rem',
+              fontWeight: 500,
+              outline: 'none',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-sm)',
+              maxWidth: '300px'
+            }}
+          >
+            {customRoles.length > 0 && (
+              <optgroup label="🌟 Custom User Roles">
+                {customRoles.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    ★ {j.title} ({j.company})
+                  </option>
+                ))}
+              </optgroup>
+            )}
+
+            <optgroup label="💼 Pre-loaded Engineering Roles (18)">
+              {standardRoles.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.title}
                 </option>
               ))}
-            </select>
-          </div>
+            </optgroup>
 
-          {/* 3-Minute Pitch Guide Button */}
+            <option value="__custom_new__" style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>
+              ➕ + Add Custom Role...
+            </option>
+          </select>
+
+          {/* Dedicated + Custom Role Button */}
           <button
-            onClick={onOpenPitchModal}
+            type="button"
+            onClick={onOpenCustomRoleModal}
             className="secondary-btn"
             style={{
-              borderColor: '#fde68a',
-              background: '#fffbeb',
-              color: '#b45309',
+              padding: '7px 12px',
               fontSize: '0.8rem',
-              fontWeight: 600
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              borderColor: '#c7d2fe',
+              background: '#eef2ff',
+              color: '#4338ca'
             }}
-            title="Open 3-minute hackathon pitch script & live cues"
+            title="Create your own custom job role and requirements"
           >
-            <Mic size={14} color="#d97706" />
-            <span>3-Min Pitch Guide</span>
-          </button>
-
-          {/* API Key Modal Button */}
-          <button
-            onClick={onOpenKeyModal}
-            className="secondary-btn"
-            style={{
-              borderColor: hasApiKey ? 'var(--accent-emerald)' : 'var(--border-subtle)',
-              fontSize: '0.8rem'
-            }}
-          >
-            <Key size={14} color={hasApiKey ? 'var(--accent-emerald)' : 'var(--text-muted)'} />
-            <span>{hasApiKey ? 'Gemini AI Active' : 'Offline / API Key'}</span>
-            {hasApiKey && <CheckCircle2 size={12} color="var(--accent-emerald)" />}
+            <Plus size={14} />
+            <span>Custom Role</span>
           </button>
         </div>
       </div>

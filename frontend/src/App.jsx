@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import CandidateView from './components/CandidateView';
 import RecruiterView from './components/RecruiterView';
-import ApiKeyModal from './components/ApiKeyModal';
-import PitchGuideModal from './components/PitchGuideModal';
+import CustomRoleModal from './components/CustomRoleModal';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -11,11 +10,17 @@ export default function App() {
   const [activeMode, setActiveMode] = useState('candidate'); // 'candidate' | 'recruiter'
   const [sampleJobs, setSampleJobs] = useState([]);
   const [sampleResumes, setSampleResumes] = useState([]);
+  const [customRoles, setCustomRoles] = useState(() => {
+    try {
+      const saved = localStorage.getItem('matchpulse_custom_roles');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [selectedJobId, setSelectedJobId] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [apiKey, setApiKey] = useState(localStorage.getItem('matchpulse_gemini_key') || '');
-  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
-  const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
 
   // Candidate Match States
   const [matchLoading, setMatchLoading] = useState(false);
@@ -25,6 +30,9 @@ export default function App() {
   const [batchLoading, setBatchLoading] = useState(false);
   const [batchResults, setBatchResults] = useState(null);
 
+  // Combined list of roles: custom roles first, then sample jobs
+  const allRoles = [...customRoles, ...sampleJobs];
+
   // Initial load of sample data from backend
   useEffect(() => {
     fetch(`${API_BASE}/api/sample-data`)
@@ -33,16 +41,18 @@ export default function App() {
         if (data.jobs && data.jobs.length > 0) {
           setSampleJobs(data.jobs);
           setSampleResumes(data.resumes || []);
-          setSelectedJobId(data.jobs[0].id);
-          setJobDescription(data.jobs[0].description);
 
-          // Proactively run an initial match for Alex Chen so Candidate View is immediately populated with glowing dial!
+          // If no role selected yet
+          const initialJob = customRoles.length > 0 ? customRoles[0] : data.jobs[0];
+          setSelectedJobId(initialJob.id);
+          setJobDescription(initialJob.description);
+
+          // Proactively run an initial match for Alex Chen
           if (data.resumes && data.resumes.length > 0) {
             handleMatchSingle({
               resume_text: data.resumes[0].text,
-              job_description: data.jobs[0].description,
-              candidate_name: data.resumes[0].name,
-              api_key: apiKey
+              job_description: initialJob.description,
+              candidate_name: data.resumes[0].name
             });
           }
         }
@@ -50,21 +60,43 @@ export default function App() {
       .catch(err => console.error("Could not fetch sample data:", err));
   }, []);
 
-  // When demo role changes
+  // When demo or custom role changes
   const handleSelectJob = (jobId) => {
     setSelectedJobId(jobId);
-    const job = sampleJobs.find(j => j.id === jobId);
+    const job = allRoles.find(j => j.id === jobId);
     if (job) {
       setJobDescription(job.description);
     }
   };
 
-  const handleSaveApiKey = (newKey) => {
-    setApiKey(newKey);
-    if (newKey) {
-      localStorage.setItem('matchpulse_gemini_key', newKey);
-    } else {
-      localStorage.removeItem('matchpulse_gemini_key');
+  // Add custom role
+  const handleAddCustomRole = (newRole) => {
+    const updated = [newRole, ...customRoles];
+    setCustomRoles(updated);
+    try {
+      localStorage.setItem('matchpulse_custom_roles', JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Could not persist custom roles to localStorage:", e);
+    }
+    setSelectedJobId(newRole.id);
+    setJobDescription(newRole.description);
+  };
+
+  // Delete custom role
+  const handleDeleteCustomRole = (roleId) => {
+    const updated = customRoles.filter(r => r.id !== roleId);
+    setCustomRoles(updated);
+    try {
+      localStorage.setItem('matchpulse_custom_roles', JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Could not delete custom role from localStorage:", e);
+    }
+    if (selectedJobId === roleId) {
+      const fallback = updated.length > 0 ? updated[0] : (sampleJobs[0] || null);
+      if (fallback) {
+        setSelectedJobId(fallback.id);
+        setJobDescription(fallback.description);
+      }
     }
   };
 
@@ -106,7 +138,12 @@ export default function App() {
     }
   };
 
-  const targetJob = sampleJobs.find(j => j.id === selectedJobId) || sampleJobs[0];
+  const targetJob = allRoles.find(j => j.id === selectedJobId) || allRoles[0] || {
+    title: 'Software Engineer',
+    company: 'Nexus Innovations',
+    department: 'Engineering',
+    description: jobDescription
+  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -114,12 +151,10 @@ export default function App() {
       <Navbar
         activeMode={activeMode}
         setActiveMode={setActiveMode}
-        sampleJobs={sampleJobs}
+        roles={allRoles}
         selectedJobId={selectedJobId}
         onSelectJob={handleSelectJob}
-        onOpenKeyModal={() => setIsKeyModalOpen(true)}
-        onOpenPitchModal={() => setIsPitchModalOpen(true)}
-        hasApiKey={!!apiKey}
+        onOpenCustomRoleModal={() => setIsCustomModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -133,7 +168,6 @@ export default function App() {
             onMatchSingle={handleMatchSingle}
             matchLoading={matchLoading}
             matchResult={candidateMatchResult}
-            apiKey={apiKey}
           />
         ) : (
           <RecruiterView
@@ -144,25 +178,18 @@ export default function App() {
             onMatchBatch={handleMatchBatch}
             batchLoading={batchLoading}
             batchResults={batchResults}
-            apiKey={apiKey}
           />
         )}
       </main>
 
-      {/* API Key Modal */}
-      <ApiKeyModal
-        isOpen={isKeyModalOpen}
-        onClose={() => setIsKeyModalOpen(false)}
-        apiKey={apiKey}
-        onSaveKey={handleSaveApiKey}
-      />
-
-      {/* 3-Minute Hackathon Demo & Pitch Teleprompter */}
-      <PitchGuideModal
-        isOpen={isPitchModalOpen}
-        onClose={() => setIsPitchModalOpen(false)}
-        onSelectCandidateMode={() => setActiveMode('candidate')}
-        onSelectRecruiterMode={() => setActiveMode('recruiter')}
+      {/* Custom Role Creation & Management Modal */}
+      <CustomRoleModal
+        isOpen={isCustomModalOpen}
+        onClose={() => setIsCustomModalOpen(false)}
+        customRoles={customRoles}
+        onAddRole={handleAddCustomRole}
+        onDeleteRole={handleDeleteCustomRole}
+        onSelectRole={handleSelectJob}
       />
 
       {/* Footer */}
@@ -177,7 +204,7 @@ export default function App() {
       }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            MatchPulse AI • Next-Generation Semantic Hiring Agent • Hackathon Presentation Edition
+            MatchPulse AI • Next-Generation Semantic Resume-to-Job Matching System
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span>50% Skills</span>
@@ -189,10 +216,10 @@ export default function App() {
             <span>10% Education</span>
             <span>•</span>
             <button
-              onClick={() => setIsPitchModalOpen(true)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer', fontWeight: 600 }}
+              onClick={() => setIsCustomModalOpen(true)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', fontWeight: 600 }}
             >
-              Open Pitch Script
+              + Add Custom Role
             </button>
           </div>
         </div>
