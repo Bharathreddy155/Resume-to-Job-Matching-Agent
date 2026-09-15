@@ -1,6 +1,9 @@
 import os
 import io
 import csv
+import time
+import re
+import uuid
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,7 +15,8 @@ from parsers import parse_document, extract_candidate_metadata
 from matcher import parse_job_requirements, compute_overall_compatibility
 from skill_ontology import SKILL_TAXONOMY
 from ai_explainer import explain_match
-from sample_data import SAMPLE_JOBS, SAMPLE_RESUMES
+from sample_data import SAMPLE_JOBS
+from database import get_all_resumes, save_resume, delete_resume
 
 load_dotenv()
 
@@ -64,11 +68,56 @@ def health_check():
 
 @app.get("/api/sample-data")
 def get_sample_data():
-    """Provides sample jobs and resumes for 1-click hackathon evaluation."""
+    """Provides preloaded jobs and all persistent candidate resumes from database."""
     return {
         "jobs": SAMPLE_JOBS,
-        "resumes": SAMPLE_RESUMES
+        "resumes": get_all_resumes()
     }
+
+@app.get("/api/resumes")
+def list_all_resumes():
+    """Return all resumes stored in database (user uploads + preloaded samples)."""
+    return get_all_resumes()
+
+@app.post("/api/upload-resume")
+async def upload_and_save_resume(file: UploadFile = File(...)):
+    """Parse uploaded PDF/DOCX/TXT and automatically persist to SQLite database."""
+    try:
+        content = await file.read()
+        parsed = parse_document(content, file.filename)
+        meta = parsed["metadata"]
+        candidate_name = meta.get("name")
+        if not candidate_name or candidate_name == "Candidate":
+            clean_name = re.sub(r'(_resume|_cv|\.pdf|\.docx|\.txt)$', '', file.filename, flags=re.IGNORECASE)
+            clean_name = clean_name.replace("_", " ").replace("-", " ").title().strip()
+            candidate_name = clean_name if clean_name else "Uploaded Candidate"
+
+        resume_id = f"user_resume_{int(time.time())}_{uuid.uuid4().hex[:6]}"
+        exp = meta.get("detected_experience_years", 0)
+        saved = save_resume(
+            resume_id=resume_id,
+            name=candidate_name,
+            text=parsed["text"],
+            filename=file.filename,
+            headline=f"Uploaded • {exp} yrs exp" if exp else "Uploaded Resume",
+            is_sample=False
+        )
+
+        return {
+            "success": True,
+            "resume": saved,
+            "metadata": meta
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to upload resume: {str(e)}")
+
+@app.delete("/api/resumes/{resume_id}")
+def delete_resume_endpoint(resume_id: str):
+    """Delete an uploaded resume from the database."""
+    success = delete_resume(resume_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    return {"success": True, "deleted_id": resume_id}
 
 @app.get("/api/skills-catalog")
 def get_skills_catalog():

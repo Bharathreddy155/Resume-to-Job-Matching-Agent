@@ -9,7 +9,7 @@ const API_BASE = 'http://localhost:8000';
 export default function App() {
   const [activeMode, setActiveMode] = useState('candidate'); // 'candidate' | 'recruiter'
   const [sampleJobs, setSampleJobs] = useState([]);
-  const [sampleResumes, setSampleResumes] = useState([]);
+  const [allResumes, setAllResumes] = useState([]);
   const [customRoles, setCustomRoles] = useState(() => {
     try {
       const saved = localStorage.getItem('matchpulse_custom_roles');
@@ -33,31 +33,31 @@ export default function App() {
   // Combined list of roles: custom roles first, then sample jobs
   const allRoles = [...customRoles, ...sampleJobs];
 
-  // Initial load of sample data from backend
+  // Initial load of sample data and database resumes from backend
   useEffect(() => {
     fetch(`${API_BASE}/api/sample-data`)
       .then(res => res.json())
       .then(data => {
         if (data.jobs && data.jobs.length > 0) {
           setSampleJobs(data.jobs);
-          setSampleResumes(data.resumes || []);
-
-          // If no role selected yet
           const initialJob = customRoles.length > 0 ? customRoles[0] : data.jobs[0];
           setSelectedJobId(initialJob.id);
           setJobDescription(initialJob.description);
 
-          // Proactively run an initial match for Alex Chen
-          if (data.resumes && data.resumes.length > 0) {
+          const resumes = data.resumes || [];
+          setAllResumes(resumes);
+
+          // Proactively run an initial match for the first candidate in pool
+          if (resumes.length > 0) {
             handleMatchSingle({
-              resume_text: data.resumes[0].text,
+              resume_text: resumes[0].text,
               job_description: initialJob.description,
-              candidate_name: data.resumes[0].name
+              candidate_name: resumes[0].name
             });
           }
         }
       })
-      .catch(err => console.error("Could not fetch sample data:", err));
+      .catch(err => console.error("Could not fetch initial data from backend:", err));
   }, []);
 
   // When demo or custom role changes
@@ -97,6 +97,48 @@ export default function App() {
         setSelectedJobId(fallback.id);
         setJobDescription(fallback.description);
       }
+    }
+  };
+
+  // Upload and persist resume into SQLite database
+  const handleUploadResume = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE}/api/upload-resume`, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to parse resume');
+    }
+
+    const data = await res.json();
+    if (data.resume) {
+      setAllResumes(prev => [data.resume, ...prev.filter(r => r.id !== data.resume.id)]);
+      
+      // Auto-trigger single match with current job description
+      handleMatchSingle({
+        resume_text: data.resume.text,
+        job_description: jobDescription,
+        candidate_name: data.resume.name
+      });
+    }
+
+    return data;
+  };
+
+  // Delete resume from database
+  const handleDeleteResume = async (resumeId) => {
+    try {
+      await fetch(`${API_BASE}/api/resumes/${resumeId}`, {
+        method: 'DELETE'
+      });
+      setAllResumes(prev => prev.filter(r => r.id !== resumeId));
+    } catch (err) {
+      console.error("Could not delete resume:", err);
     }
   };
 
@@ -163,9 +205,11 @@ export default function App() {
           <CandidateView
             jobDescription={jobDescription}
             setJobDescription={setJobDescription}
-            sampleResumes={sampleResumes}
+            resumes={allResumes}
             targetJob={targetJob}
             onMatchSingle={handleMatchSingle}
+            onUploadResume={handleUploadResume}
+            onDeleteResume={handleDeleteResume}
             matchLoading={matchLoading}
             matchResult={candidateMatchResult}
           />
@@ -173,9 +217,11 @@ export default function App() {
           <RecruiterView
             jobDescription={jobDescription}
             setJobDescription={setJobDescription}
-            sampleResumes={sampleResumes}
+            resumes={allResumes}
             targetJob={targetJob}
             onMatchBatch={handleMatchBatch}
+            onUploadResume={handleUploadResume}
+            onDeleteResume={handleDeleteResume}
             batchLoading={batchLoading}
             batchResults={batchResults}
           />
@@ -204,7 +250,7 @@ export default function App() {
       }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            MatchPulse AI • Next-Generation Semantic Resume-to-Job Matching System
+            MatchPulse AI • Next-Generation Semantic Resume-to-Job Matching System • SQLite Persistent Database
           </div>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span>50% Skills</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -15,7 +15,8 @@ import {
   Copy,
   Check,
   Zap,
-  Info
+  Info,
+  Trash2
 } from 'lucide-react';
 import ScoreDial from './ScoreDial';
 import confetti from 'canvas-confetti';
@@ -23,42 +24,52 @@ import confetti from 'canvas-confetti';
 export default function CandidateView({
   jobDescription,
   setJobDescription,
-  sampleResumes,
+  resumes = [],
   targetJob,
   onMatchSingle,
+  onUploadResume,
+  onDeleteResume,
   matchLoading,
-  matchResult,
-  apiKey
+  matchResult
 }) {
-  const [resumeText, setResumeText] = useState(sampleResumes[0]?.text || '');
-  const [candidateName, setCandidateName] = useState(sampleResumes[0]?.name || 'Alex Chen');
+  const [selectedResumeId, setSelectedResumeId] = useState(resumes[0]?.id || '');
+  const [resumeText, setResumeText] = useState(resumes[0]?.text || '');
+  const [candidateName, setCandidateName] = useState(resumes[0]?.name || 'Candidate');
   const [fileName, setFileName] = useState('');
   const [uploadLoading, setUploadLoading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [uploadSuccessMsg, setUploadSuccessMsg] = useState('');
+
+  // Sync state if initial resumes list loads later
+  useEffect(() => {
+    if (resumes.length > 0 && !selectedResumeId) {
+      setSelectedResumeId(resumes[0].id);
+      setResumeText(resumes[0].text);
+      setCandidateName(resumes[0].name);
+    }
+  }, [resumes]);
 
   const processFile = async (file) => {
     if (!file) return;
-    setFileName(file.name);
     setUploadLoading(true);
-    const formData = new FormData();
-    formData.append('file', file);
+    setUploadSuccessMsg('');
 
     try {
-      const res = await fetch('http://localhost:8000/api/parse-resume', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      if (data.text) {
-        setResumeText(data.text);
-        if (data.metadata?.name && data.metadata.name !== 'Candidate') {
-          setCandidateName(data.metadata.name);
+      if (onUploadResume) {
+        const data = await onUploadResume(file);
+        if (data?.resume) {
+          setSelectedResumeId(data.resume.id);
+          setResumeText(data.resume.text);
+          setCandidateName(data.resume.name);
+          setFileName(data.resume.filename || file.name);
+          setUploadSuccessMsg(`✓ Saved "${data.resume.name}" to database and matched successfully!`);
+          setTimeout(() => setUploadSuccessMsg(''), 6000);
         }
       }
     } catch (err) {
-      console.error('File parsing failed:', err);
-      alert('Error parsing document. Please check backend server.');
+      console.error('File upload failed:', err);
+      alert('Error parsing and saving document: ' + err.message);
     } finally {
       setUploadLoading(false);
     }
@@ -86,18 +97,26 @@ export default function CandidateView({
     processFile(file);
   };
 
-  const handleSelectSample = (sample) => {
-    setResumeText(sample.text);
-    setCandidateName(sample.name);
-    setFileName('');
+  const handleSelectCandidate = (candidate) => {
+    setSelectedResumeId(candidate.id);
+    setResumeText(candidate.text);
+    setCandidateName(candidate.name);
+    setFileName(candidate.filename || '');
+    setUploadSuccessMsg('');
+
+    // Immediately calculate match for selected candidate
+    onMatchSingle({
+      resume_text: candidate.text,
+      job_description: jobDescription,
+      candidate_name: candidate.name
+    });
   };
 
   const handleRunMatch = async () => {
     const res = await onMatchSingle({
       resume_text: resumeText,
       job_description: jobDescription,
-      candidate_name: candidateName,
-      api_key: apiKey
+      candidate_name: candidateName
     });
 
     if (res?.match_result?.overall_score >= 80) {
@@ -190,30 +209,76 @@ export default function CandidateView({
               <h2 style={{ fontSize: '1.15rem' }}>Candidate Resume</h2>
             </div>
             
-            {/* Quick Demo Candidates Switcher */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {sampleResumes.map((s) => {
-                const isSelected = candidateName === s.name;
+            {/* Candidate Switcher (Persistent Resumes from Database) */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {resumes.map((s) => {
+                const isSelected = selectedResumeId === s.id;
+                const isUserUpload = !s.is_sample;
                 return (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSelectSample(s)}
-                    className="secondary-btn"
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '0.76rem',
-                      fontWeight: isSelected ? 700 : 500,
-                      background: isSelected ? '#eff6ff' : '#ffffff',
-                      borderColor: isSelected ? 'var(--accent-blue)' : 'var(--border-subtle)',
-                      color: isSelected ? 'var(--accent-blue)' : 'var(--text-main)'
-                    }}
-                  >
-                    {s.name.split(' ')[0]}
-                  </button>
+                  <div key={s.id} style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
+                    <button
+                      onClick={() => handleSelectCandidate(s)}
+                      className="secondary-btn"
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.76rem',
+                        fontWeight: isSelected ? 700 : 500,
+                        background: isSelected ? '#eff6ff' : (isUserUpload ? '#f0fdf4' : '#ffffff'),
+                        borderColor: isSelected ? 'var(--accent-blue)' : (isUserUpload ? '#86efac' : 'var(--border-subtle)'),
+                        color: isSelected ? 'var(--accent-blue)' : (isUserUpload ? '#15803d' : 'var(--text-main)')
+                      }}
+                      title={isUserUpload ? `Uploaded resume: ${s.name}` : `Pre-loaded sample: ${s.name}`}
+                    >
+                      {isUserUpload ? `★ ${s.name}` : s.name.split(' ')[0]}
+                    </button>
+                    {isUserUpload && onDeleteResume && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Remove "${s.name}" from database?`)) {
+                            onDeleteResume(s.id);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--accent-rose)',
+                          cursor: 'pointer',
+                          padding: '2px 4px',
+                          marginLeft: '-4px',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                        title="Delete this uploaded resume from database"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </div>
+
+          {/* Upload Success Banner */}
+          {uploadSuccessMsg && (
+            <div style={{
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              color: '#166534',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <CheckCircle2 size={15} color="#16a34a" />
+              <span>{uploadSuccessMsg}</span>
+            </div>
+          )}
 
           {/* Drag-and-Drop / Browse File Upload Area */}
           <div

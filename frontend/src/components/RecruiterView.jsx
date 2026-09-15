@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   Trophy,
@@ -8,32 +8,38 @@ import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
-  ExternalLink,
-  ChevronRight,
+  Search,
   Eye,
-  FileUp,
-  X,
+  FileSpreadsheet,
   UploadCloud,
   FileText,
-  Search,
-  Check,
+  Briefcase,
+  ChevronRight,
+  TrendingUp,
+  Award,
+  Layers,
+  HelpCircle,
   Copy,
-  ArrowRight
+  Check,
+  X,
+  ArrowRight,
+  Trash2
 } from 'lucide-react';
 import ScoreDial from './ScoreDial';
 
 export default function RecruiterView({
   jobDescription,
   setJobDescription,
-  sampleResumes,
+  resumes = [],
   targetJob,
   onMatchBatch,
+  onUploadResume,
+  onDeleteResume,
   batchLoading,
-  batchResults,
-  apiKey
+  batchResults
 }) {
   const [candidateList, setCandidateList] = useState(
-    sampleResumes.map(r => ({ id: r.id, name: r.name, text: r.text, filename: r.name + '.pdf' }))
+    resumes.map(r => ({ id: r.id, name: r.name, text: r.text, filename: r.filename || r.name + '.pdf', is_sample: r.is_sample }))
   );
   const [minScoreFilter, setMinScoreFilter] = useState(0);
   const [tierFilter, setTierFilter] = useState('all'); // 'all' | 'high' | 'mod' | 'low'
@@ -45,35 +51,30 @@ export default function RecruiterView({
   const [isDragOver, setIsDragOver] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
 
-  // Handle multi-file parsing from drop or file picker
+  // Sync candidateList whenever database resumes update
+  useEffect(() => {
+    if (resumes && resumes.length > 0) {
+      setCandidateList(
+        resumes.map(r => ({ id: r.id, name: r.name, text: r.text, filename: r.filename || r.name + '.pdf', is_sample: r.is_sample }))
+      );
+    }
+  }, [resumes]);
+
+  // Handle multi-file parsing & persistence into SQLite database
   const processFiles = async (files) => {
     if (!files || files.length === 0) return;
     setMultiUploadLoading(true);
-    const newCandidates = [];
 
     for (const file of files) {
-      const formData = new FormData();
-      formData.append('file', file);
       try {
-        const res = await fetch('http://localhost:8000/api/parse-resume', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        if (data.text) {
-          newCandidates.push({
-            id: `upload_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-            name: data.metadata?.name !== 'Candidate' ? data.metadata.name : file.name.replace(/\.[^/.]+$/, ''),
-            text: data.text,
-            filename: file.name
-          });
+        if (onUploadResume) {
+          await onUploadResume(file);
         }
       } catch (err) {
-        console.error('Error parsing file:', file.name, err);
+        console.error('Error saving uploaded file to database:', file.name, err);
       }
     }
 
-    setCandidateList(prev => [...prev, ...newCandidates]);
     setMultiUploadLoading(false);
   };
 
@@ -99,17 +100,10 @@ export default function RecruiterView({
     processFiles(files);
   };
 
-  const handleResetToSamples = () => {
-    setCandidateList(
-      sampleResumes.map(r => ({ id: r.id, name: r.name, text: r.text, filename: r.name + '.pdf' }))
-    );
-  };
-
   const handleRunBatch = () => {
     onMatchBatch({
       job_description: jobDescription,
-      candidates: candidateList,
-      api_key: apiKey
+      candidates: candidateList
     });
   };
 
