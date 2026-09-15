@@ -12,7 +12,13 @@ import {
   ChevronRight,
   Eye,
   FileUp,
-  X
+  X,
+  UploadCloud,
+  FileText,
+  Search,
+  Check,
+  Copy,
+  ArrowRight
 } from 'lucide-react';
 import ScoreDial from './ScoreDial';
 
@@ -30,15 +36,18 @@ export default function RecruiterView({
     sampleResumes.map(r => ({ id: r.id, name: r.name, text: r.text, filename: r.name + '.pdf' }))
   );
   const [minScoreFilter, setMinScoreFilter] = useState(0);
+  const [tierFilter, setTierFilter] = useState('all'); // 'all' | 'high' | 'mod' | 'low'
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState('rank'); // 'rank' | 'score' | 'exp'
+  const [sortAsc, setSortAsc] = useState(true);
   const [selectedCandidateModal, setSelectedCandidateModal] = useState(null);
   const [multiUploadLoading, setMultiUploadLoading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
-  // Handle multi-file PDF/DOCX upload
-  const handleMultiFileUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
+  // Handle multi-file parsing from drop or file picker
+  const processFiles = async (files) => {
+    if (!files || files.length === 0) return;
     setMultiUploadLoading(true);
     const newCandidates = [];
 
@@ -68,6 +77,28 @@ export default function RecruiterView({
     setMultiUploadLoading(false);
   };
 
+  const handleMultiFileUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    processFiles(files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    processFiles(files);
+  };
+
   const handleResetToSamples = () => {
     setCandidateList(
       sampleResumes.map(r => ({ id: r.id, name: r.name, text: r.text, filename: r.name + '.pdf' }))
@@ -82,14 +113,37 @@ export default function RecruiterView({
     });
   };
 
-  // Filter candidates
+  // Sorting & Filtering logic
   const filteredCandidates = (batchResults?.candidates || []).filter(c => {
-    const matchesScore = c.overall_score >= minScoreFilter;
+    const matchesMinScore = c.overall_score >= minScoreFilter;
+    let matchesTier = true;
+    if (tierFilter === 'high') matchesTier = c.overall_score >= 80;
+    if (tierFilter === 'mod') matchesTier = c.overall_score >= 60 && c.overall_score < 80;
+    if (tierFilter === 'low') matchesTier = c.overall_score < 60;
+
+    const queryLower = searchQuery.toLowerCase();
     const matchesQuery = !searchQuery || 
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.exact_matches.some(m => m.skill.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesScore && matchesQuery;
+      c.name.toLowerCase().includes(queryLower) ||
+      c.exact_matches.some(m => m.skill.toLowerCase().includes(queryLower)) ||
+      (c.semantic_matches && c.semantic_matches.some(m => m.skill.toLowerCase().includes(queryLower)));
+
+    return matchesMinScore && matchesTier && matchesQuery;
+  }).sort((a, b) => {
+    let diff = 0;
+    if (sortField === 'rank') diff = a.rank - b.rank;
+    if (sortField === 'score') diff = b.overall_score - a.overall_score;
+    if (sortField === 'exp') diff = b.stats.candidate_exp_years - a.stats.candidate_exp_years;
+    return sortAsc ? diff : -diff;
   });
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortField(field);
+      setSortAsc(true);
+    }
+  };
 
   const handleExportJson = () => {
     const exportData = filteredCandidates.map(c => ({
@@ -99,73 +153,167 @@ export default function RecruiterView({
       tier: c.match_tier,
       experience_years: c.stats.candidate_exp_years,
       exact_matches: c.exact_matches.map(m => m.skill),
-      missing_critical: c.missing_critical.map(m => m.skill)
+      semantic_matches: (c.semantic_matches || []).map(m => `${m.matched_via} -> ${m.skill}`),
+      missing_critical: c.missing_critical.map(m => m.skill),
+      summary: c.explanation?.summary
     }));
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `candidate_rankings_${Date.now()}.json`;
+    a.download = `matchpulse_leaderboard_${Date.now()}.json`;
     a.click();
+  };
+
+  const copyProbingQuestion = (text, id) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       
-      {/* Top Controls: JD and Batch Candidates */}
+      {/* Top Controls: JD and Batch Candidate Drag-and-Drop Ingestion */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px' }}>
         
-        {/* Left: Job Description */}
-        <div className="glass-card" style={{ padding: '24px' }}>
+        {/* Left: Job Spec */}
+        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '1.1rem' }}>Recruiting Job Spec</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(6, 182, 212, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <FileText size={18} color="var(--accent-cyan)" />
+              </div>
+              <h2 style={{ fontSize: '1.15rem' }}>Recruiting Job Spec</h2>
             </div>
-            <span className="badge badge-cyan">{targetJob?.title || 'Open Role'}</span>
+            <span className="badge badge-cyan" style={{ fontWeight: 600 }}>{targetJob?.title || 'Open Role'}</span>
           </div>
 
           <textarea
             value={jobDescription}
             onChange={(e) => setJobDescription(e.target.value)}
             rows={8}
-            placeholder="Edit requirements or role specifications..."
+            placeholder="Edit requirements, competencies, or role qualifications..."
             style={{
               width: '100%',
-              background: 'rgba(15, 23, 42, 0.7)',
+              background: 'rgba(11, 17, 32, 0.8)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: '10px',
-              padding: '12px',
+              borderRadius: '12px',
+              padding: '14px',
               color: '#fff',
-              fontSize: '0.85rem',
+              fontSize: '0.86rem',
               lineHeight: 1.5,
               resize: 'vertical',
               outline: 'none',
-              fontFamily: 'var(--font-body)'
+              fontFamily: 'var(--font-body)',
+              transition: 'border-color 0.2s ease'
             }}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-cyan)'}
+            onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
           />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', fontSize: '0.78rem', color: 'var(--text-dim)' }}>
+            <span>Target Role: <strong style={{ color: 'var(--text-muted)' }}>{targetJob?.department || 'Engineering'}</strong></span>
+            <span>{jobDescription.length.toLocaleString()} chars</span>
+          </div>
         </div>
 
-        {/* Right: Candidate Pool Manager */}
+        {/* Right: Candidate Pool Manager & Multi-Resume Drag-and-Drop */}
         <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Users size={18} color="var(--accent-indigo)" />
-                <h2 style={{ fontSize: '1.1rem' }}>Candidate Pool ({candidateList.length})</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'rgba(99, 102, 241, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Users size={18} color="var(--accent-indigo)" />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.15rem' }}>Candidate Pool</h2>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{candidateList.length} applicant profiles queued</span>
+                </div>
               </div>
-              <button onClick={handleResetToSamples} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 10px' }}>
+
+              <button onClick={handleResetToSamples} className="secondary-btn" style={{ fontSize: '0.76rem', padding: '4px 10px' }}>
                 Load Sample Pool
               </button>
             </div>
 
-            {/* Candidate chips */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', maxHeight: '120px', overflowY: 'auto', marginBottom: '16px' }}>
+            {/* Interactive Drag & Drop Area for Multi-Files */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`glass-panel ${isDragOver ? 'dropzone-active' : ''}`}
+              style={{
+                border: isDragOver ? '2px dashed var(--accent-cyan)' : '1px dashed rgba(148, 163, 184, 0.3)',
+                padding: '12px 14px',
+                marginBottom: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <UploadCloud size={22} color={isDragOver ? 'var(--accent-cyan)' : 'var(--accent-indigo)'} />
+                <div>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#fff' }}>
+                    {multiUploadLoading ? 'Parsing Resumes...' : 'Drag & Drop Multiple Resumes'}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Drop `.pdf` or `.docx` files to batch ingest into evaluation pool
+                  </div>
+                </div>
+              </div>
+
+              <label className="secondary-btn" style={{ cursor: 'pointer', margin: 0, padding: '5px 10px', fontSize: '0.78rem' }}>
+                <span>{multiUploadLoading ? 'Parsing...' : 'Browse'}</span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.docx,.txt"
+                  onChange={handleMultiFileUpload}
+                  style={{ display: 'none' }}
+                  disabled={multiUploadLoading}
+                />
+              </label>
+            </div>
+
+            {/* Candidate chips in queue */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '100px', overflowY: 'auto', marginBottom: '12px' }}>
               {candidateList.map((c, idx) => (
-                <div key={c.id || idx} className="glass-panel" style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem' }}>
+                <div
+                  key={c.id || idx}
+                  className="glass-panel"
+                  style={{
+                    padding: '4px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontSize: '0.78rem',
+                    background: 'rgba(30, 41, 59, 0.4)'
+                  }}
+                >
                   <span style={{ color: '#fff', fontWeight: 500 }}>{c.name}</span>
                   <button
                     onClick={() => setCandidateList(candidateList.filter((_, i) => i !== idx))}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1 }}
+                    title="Remove candidate"
                   >
                     ×
                   </button>
@@ -174,82 +322,120 @@ export default function RecruiterView({
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <label className="secondary-btn" style={{ cursor: 'pointer', margin: 0 }}>
-              <FileUp size={16} />
-              <span>{multiUploadLoading ? 'Parsing Resumes...' : 'Add PDF/DOCX Resumes'}</span>
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.docx,.txt"
-                onChange={handleMultiFileUpload}
-                style={{ display: 'none' }}
-                disabled={multiUploadLoading}
-              />
-            </label>
-
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', paddingTop: '8px' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+              Ready to evaluate against ontology
+            </span>
             <button
               onClick={handleRunBatch}
               disabled={batchLoading || candidateList.length === 0}
               className="gradient-btn"
-              style={{ padding: '10px 20px' }}
+              style={{ padding: '10px 22px' }}
             >
               <Sparkles size={18} />
-              <span>{batchLoading ? 'Ranking Candidates...' : 'Rank Candidates'}</span>
+              <span>{batchLoading ? 'Executing Multi-Factor Ranking...' : `Rank ${candidateList.length} Candidates`}</span>
             </button>
           </div>
         </div>
 
       </div>
 
-      {/* Leaderboard Table & Filters */}
+      {/* Leaderboard Table & Filtering Bar */}
       {batchResults && (
         <div className="glass-card" style={{ padding: '28px' }}>
           
-          {/* Header & Filter Bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+          {/* Header & Filter Controls */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '18px', marginBottom: '22px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Trophy size={24} color="var(--accent-amber)" />
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.35) 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid rgba(245, 158, 11, 0.4)'
+              }}>
+                <Trophy size={24} color="#fbbf24" />
+              </div>
               <div>
-                <h3 style={{ fontSize: '1.3rem' }}>Ranked Candidate Leaderboard</h3>
+                <h3 style={{ fontSize: '1.35rem' }}>Ranked Candidate Leaderboard</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Evaluated {batchResults.total_candidates} candidates against {batchResults.required_skills_count} role competencies
+                  Evaluated {batchResults.total_candidates} candidates across {batchResults.required_skills_count} target competencies
                 </p>
               </div>
             </div>
 
-            {/* Filter controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Min Score: {minScoreFilter}%</span>
+            {/* Quick Filter Buttons & Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              
+              {/* Tier Filters */}
+              <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.8)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <button
+                  onClick={() => setTierFilter('all')}
+                  className="secondary-btn"
+                  style={{
+                    border: 'none',
+                    padding: '4px 8px',
+                    fontSize: '0.74rem',
+                    background: tierFilter === 'all' ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
+                    color: tierFilter === 'all' ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  All ({batchResults.candidates.length})
+                </button>
+                <button
+                  onClick={() => setTierFilter('high')}
+                  className="secondary-btn"
+                  style={{
+                    border: 'none',
+                    padding: '4px 8px',
+                    fontSize: '0.74rem',
+                    background: tierFilter === 'high' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
+                    color: tierFilter === 'high' ? '#34d399' : 'var(--text-muted)'
+                  }}
+                >
+                  Top Fits (≥80%)
+                </button>
+                <button
+                  onClick={() => setTierFilter('mod')}
+                  className="secondary-btn"
+                  style={{
+                    border: 'none',
+                    padding: '4px 8px',
+                    fontSize: '0.74rem',
+                    background: tierFilter === 'mod' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
+                    color: tierFilter === 'mod' ? '#fbbf24' : 'var(--text-muted)'
+                  }}
+                >
+                  60-79%
+                </button>
+              </div>
+
+              {/* Search Box */}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '10px' }} />
                 <input
-                  type="range"
-                  min="0"
-                  max="90"
-                  step="5"
-                  value={minScoreFilter}
-                  onChange={(e) => setMinScoreFilter(Number(e.target.value))}
-                  style={{ accentColor: 'var(--accent-cyan)', cursor: 'pointer', width: '100px' }}
+                  type="text"
+                  placeholder="Search candidate or skill..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    background: 'rgba(15, 23, 42, 0.8)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '8px',
+                    padding: '6px 12px 6px 30px',
+                    color: '#fff',
+                    fontSize: '0.8rem',
+                    outline: 'none',
+                    width: '180px'
+                  }}
                 />
               </div>
 
-              <input
-                type="text"
-                placeholder="Search candidate or skill..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  background: 'rgba(15, 23, 42, 0.8)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  color: '#fff',
-                  fontSize: '0.82rem',
-                  outline: 'none'
-                }}
-              />
-
-              <button onClick={handleExportJson} className="secondary-btn" style={{ fontSize: '0.8rem' }}>
+              {/* Export Shortlist Button */}
+              <button onClick={handleExportJson} className="secondary-btn" style={{ fontSize: '0.78rem' }}>
                 <Download size={14} /> Export Shortlist
               </button>
             </div>
@@ -259,24 +445,42 @@ export default function RecruiterView({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <th style={{ padding: '12px 16px' }}>Rank</th>
-                  <th style={{ padding: '12px 16px' }}>Candidate</th>
-                  <th style={{ padding: '12px 16px' }}>Overall Match</th>
-                  <th style={{ padding: '12px 16px' }}>Experience</th>
-                  <th style={{ padding: '12px 16px' }}>Verified Skills</th>
-                  <th style={{ padding: '12px 16px' }}>Critical Gaps</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-dim)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <th style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => toggleSort('rank')}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Rank <ArrowUpDown size={12} />
+                    </span>
+                  </th>
+                  <th style={{ padding: '12px 14px' }}>Candidate & Credentials</th>
+                  <th style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => toggleSort('score')}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Compatibility <ArrowUpDown size={12} />
+                    </span>
+                  </th>
+                  <th style={{ padding: '12px 14px', cursor: 'pointer' }} onClick={() => toggleSort('exp')}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Experience <ArrowUpDown size={12} />
+                    </span>
+                  </th>
+                  <th style={{ padding: '12px 14px' }}>Verified Skills (Exact + Bridges)</th>
+                  <th style={{ padding: '12px 14px' }}>Critical Gaps</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'right' }}>Audit</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCandidates.map((cand) => {
-                  const rankColors = {
-                    1: { bg: 'rgba(245, 158, 11, 0.2)', text: '#fbbf24', border: 'rgba(245, 158, 11, 0.4)' },
-                    2: { bg: 'rgba(148, 163, 184, 0.2)', text: '#cbd5e1', border: 'rgba(148, 163, 184, 0.4)' },
-                    3: { bg: 'rgba(217, 119, 6, 0.2)', text: '#f59e0b', border: 'rgba(217, 119, 6, 0.4)' }
-                  };
-                  const rankBadge = rankColors[cand.rank] || { bg: 'rgba(255,255,255,0.05)', text: '#94a3b8', border: 'transparent' };
+                  let rankClass = '';
+                  let rankIcon = null;
+                  if (cand.rank === 1) {
+                    rankClass = 'rank-gold';
+                    rankIcon = '🥇';
+                  } else if (cand.rank === 2) {
+                    rankClass = 'rank-silver';
+                    rankIcon = '🥈';
+                  } else if (cand.rank === 3) {
+                    rankClass = 'rank-bronze';
+                    rankIcon = '🥉';
+                  }
 
                   return (
                     <tr
@@ -289,77 +493,95 @@ export default function RecruiterView({
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                      {/* Rank */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '30px',
-                          height: '30px',
-                          borderRadius: '8px',
-                          background: rankBadge.bg,
-                          color: rankBadge.text,
-                          border: `1px solid ${rankBadge.border}`,
-                          fontWeight: 700,
-                          fontSize: '0.9rem'
-                        }}>
-                          #{cand.rank}
+                      {/* Rank Badge */}
+                      <td style={{ padding: '14px 14px' }}>
+                        <span
+                          className={rankClass}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '2px',
+                            minWidth: '36px',
+                            height: '32px',
+                            padding: '0 8px',
+                            borderRadius: '8px',
+                            fontWeight: 800,
+                            fontSize: '0.88rem',
+                            background: rankClass ? undefined : 'rgba(255,255,255,0.05)',
+                            color: rankClass ? undefined : '#94a3b8'
+                          }}
+                        >
+                          {rankIcon} #{cand.rank}
                         </span>
                       </td>
 
                       {/* Candidate Name & Education */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontWeight: 600, color: '#fff', fontSize: '0.95rem' }}>{cand.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{cand.metadata.education}</div>
+                      <td style={{ padding: '14px 14px' }}>
+                        <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.96rem' }}>{cand.name}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {cand.metadata.education}
+                        </div>
                       </td>
 
-                      {/* Overall Match */}
-                      <td style={{ padding: '14px 16px' }}>
+                      {/* Overall Match & Pill */}
+                      <td style={{ padding: '14px 14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', fontWeight: 800, color: `var(--accent-${cand.tier_color})` }}>
+                          <span style={{
+                            fontFamily: 'var(--font-heading)',
+                            fontSize: '1.25rem',
+                            fontWeight: 800,
+                            color: `var(--accent-${cand.tier_color})`
+                          }}>
                             {cand.overall_score}%
                           </span>
-                          <span className={`badge badge-${cand.tier_color}`} style={{ fontSize: '0.7rem' }}>
+                          <span className={`badge badge-${cand.tier_color}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
                             {cand.match_tier}
                           </span>
                         </div>
                       </td>
 
                       {/* Experience */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontSize: '0.88rem', color: '#fff' }}>
+                      <td style={{ padding: '14px 14px' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#fff' }}>
                           {cand.stats.candidate_exp_years} yrs
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
                           Req: {cand.stats.required_exp_years} yrs
                         </div>
                       </td>
 
-                      {/* Verified Skills */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '240px' }}>
+                      {/* Verified Skills (Exact + Semantic Bridges) */}
+                      <td style={{ padding: '14px 14px' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '260px' }}>
                           {cand.exact_matches.slice(0, 3).map((m, i) => (
-                            <span key={i} className="badge badge-emerald" style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                            <span key={i} className="badge badge-emerald" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
                               {m.skill}
                             </span>
                           ))}
-                          {cand.exact_matches.length > 3 && (
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
-                              +{cand.exact_matches.length - 3} more
+                          {cand.semantic_matches && cand.semantic_matches.slice(0, 2).map((m, i) => (
+                            <span key={`sem_${i}`} className="badge badge-purple" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
+                              ⚡ {m.skill}
+                            </span>
+                          ))}
+                          {(cand.exact_matches.length + (cand.semantic_matches?.length || 0)) > 5 && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', alignSelf: 'center' }}>
+                              +{(cand.exact_matches.length + (cand.semantic_matches?.length || 0)) - 5} more
                             </span>
                           )}
                         </div>
                       </td>
 
                       {/* Critical Gaps */}
-                      <td style={{ padding: '14px 16px' }}>
+                      <td style={{ padding: '14px 14px' }}>
                         {cand.missing_critical.length === 0 ? (
-                          <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)' }}>None</span>
+                          <span className="badge badge-emerald" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>
+                            ✓ None
+                          </span>
                         ) : (
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '180px' }}>
                             {cand.missing_critical.slice(0, 2).map((g, i) => (
-                              <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem', padding: '2px 6px' }}>
+                              <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
                                 {g.skill}
                               </span>
                             ))}
@@ -372,14 +594,18 @@ export default function RecruiterView({
                         )}
                       </td>
 
-                      {/* Action */}
-                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                      {/* Full Audit Action Button */}
+                      <td style={{ padding: '14px 14px', textAlign: 'right' }}>
                         <button
                           onClick={() => setSelectedCandidateModal(cand)}
                           className="secondary-btn"
-                          style={{ fontSize: '0.78rem', padding: '6px 12px' }}
+                          style={{
+                            fontSize: '0.78rem',
+                            padding: '6px 12px',
+                            borderColor: 'rgba(99, 102, 241, 0.4)'
+                          }}
                         >
-                          <Eye size={14} /> Full Audit
+                          <Eye size={14} color="var(--accent-cyan)" /> Full Audit
                         </button>
                       </td>
                     </tr>
@@ -391,13 +617,13 @@ export default function RecruiterView({
         </div>
       )}
 
-      {/* Candidate Deep-Dive Modal */}
+      {/* Candidate Deep-Dive Audit Modal */}
       {selectedCandidateModal && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          backdropFilter: 'blur(8px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.82)',
+          backdropFilter: 'blur(12px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -405,100 +631,163 @@ export default function RecruiterView({
           padding: '24px'
         }}>
           <div className="glass-card" style={{
-            maxWidth: '850px',
+            maxWidth: '900px',
             width: '100%',
-            maxHeight: '90vh',
+            maxHeight: '92vh',
             overflowY: 'auto',
             padding: '32px',
             border: '1px solid rgba(255, 255, 255, 0.15)',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.8)'
+            boxShadow: '0 25px 70px rgba(0,0,0,0.85)'
           }}>
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                 <ScoreDial
                   score={selectedCandidateModal.overall_score}
                   tier={selectedCandidateModal.match_tier}
                   color={selectedCandidateModal.tier_color}
-                  size={100}
+                  size={110}
                 />
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h3 style={{ fontSize: '1.4rem' }}>{selectedCandidateModal.name}</h3>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{selectedCandidateModal.name}</h3>
                     <span className={`badge badge-${selectedCandidateModal.tier_color}`}>
-                      Rank #{selectedCandidateModal.rank}
+                      Rank #{selectedCandidateModal.rank} Leaderboard Fit
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Experience: {selectedCandidateModal.stats.candidate_exp_years} yrs • {selectedCandidateModal.metadata.education}
+                  <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Experience: {selectedCandidateModal.stats.candidate_exp_years} yrs • Degree: {selectedCandidateModal.metadata.education}
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={() => setSelectedCandidateModal(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px' }}
               >
                 <X size={24} />
               </button>
             </div>
 
-            {/* AI Summary */}
-            <div className="glass-panel" style={{ padding: '16px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '4px', textTransform: 'uppercase' }}>
-                Executive Evaluation
+            {/* AI Executive Summary */}
+            <div className="glass-panel" style={{ padding: '18px', marginBottom: '20px', borderLeft: `4px solid var(--accent-${selectedCandidateModal.tier_color})` }}>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Executive Evaluation Narrative
               </div>
-              <p style={{ fontSize: '0.9rem', color: '#fff', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.92rem', color: '#f1f5f9', lineHeight: 1.6 }}>
                 {selectedCandidateModal.explanation?.summary}
               </p>
             </div>
 
-            {/* Skill Matrix Breakdown */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginBottom: '20px' }}>
-              <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-emerald)', marginBottom: '8px' }}>
-                  Direct Matches ({selectedCandidateModal.exact_matches.length})
+            {/* Factor Breakdown */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+              <div className="glass-panel" style={{ padding: '12px' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Skills (50%)</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                  {selectedCandidateModal.breakdown.skill_match}%
+                </div>
+              </div>
+              <div className="glass-panel" style={{ padding: '12px' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Experience (25%)</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-indigo)' }}>
+                  {selectedCandidateModal.breakdown.experience_alignment}%
+                </div>
+              </div>
+              <div className="glass-panel" style={{ padding: '12px' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Domain (15%)</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
+                  {selectedCandidateModal.breakdown.domain_context}%
+                </div>
+              </div>
+              <div className="glass-panel" style={{ padding: '12px' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Degree (10%)</div>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-emerald)' }}>
+                  {selectedCandidateModal.breakdown.education_credentials}%
+                </div>
+              </div>
+            </div>
+
+            {/* Skill Matrix: Direct Matches vs Semantic Bridges vs Critical Gaps */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '22px' }}>
+              
+              {/* Direct Matches */}
+              <div className="glass-panel" style={{ padding: '16px' }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} /> Direct Matches ({selectedCandidateModal.exact_matches.length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {selectedCandidateModal.exact_matches.map((m, idx) => (
-                    <span key={idx} className="badge badge-emerald" style={{ fontSize: '0.75rem' }}>
+                    <span key={idx} className="badge badge-emerald" style={{ fontSize: '0.74rem' }}>
                       {m.skill}
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-rose)', marginBottom: '8px' }}>
-                  Critical Missing Requirements ({selectedCandidateModal.missing_critical.length})
+              {/* Semantic Bridges */}
+              <div className="glass-panel" style={{ padding: '16px' }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={16} /> Semantic Bridges ({selectedCandidateModal.semantic_matches?.length || 0})
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {(selectedCandidateModal.semantic_matches || []).length === 0 ? (
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>No semantic bridges applied</span>
+                  ) : (
+                    selectedCandidateModal.semantic_matches.map((m, idx) => (
+                      <div key={idx} style={{ fontSize: '0.78rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: '#fff', fontWeight: 600 }}>{m.matched_via}</span>
+                        <ArrowRight size={12} color="var(--accent-cyan)" />
+                        <span style={{ color: 'var(--accent-cyan)' }}>{m.skill}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Critical Missing Skills */}
+              <div className="glass-panel" style={{ padding: '16px' }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-rose)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={16} /> Critical Gaps ({selectedCandidateModal.missing_critical.length})
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {selectedCandidateModal.missing_critical.length === 0 ? (
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>No critical gaps</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--accent-emerald)' }}>Zero critical gaps</span>
                   ) : (
                     selectedCandidateModal.missing_critical.map((m, idx) => (
-                      <span key={idx} className="badge badge-rose" style={{ fontSize: '0.75rem' }}>
+                      <span key={idx} className="badge badge-rose" style={{ fontSize: '0.74rem' }}>
                         {m.skill}
                       </span>
                     ))
                   )}
                 </div>
               </div>
+
             </div>
 
-            {/* Interview Probing Questions */}
+            {/* Recruiter Probing Questions */}
             <div className="glass-panel" style={{ padding: '18px', borderLeft: '4px solid var(--accent-purple)' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-purple)', marginBottom: '10px' }}>
-                Recommended Interview Probing Questions
+              <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '10px' }}>
+                Recommended Interview Probing Script
               </div>
-              <ul style={{ paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedCandidateModal.explanation?.recruiter_interview_questions?.map((q, idx) => (
-                  <li key={idx} style={{ lineHeight: 1.5 }}>{q}</li>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                    <span>• {q}</span>
+                    <button
+                      onClick={() => copyProbingQuestion(q, `probe_modal_${idx}`)}
+                      className="secondary-btn"
+                      style={{ padding: '2px 6px', fontSize: '0.7rem', flexShrink: 0 }}
+                      title="Copy question"
+                    >
+                      {copiedId === `probe_modal_${idx}` ? <Check size={12} color="var(--accent-emerald)" /> : <Copy size={12} />}
+                    </button>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+            {/* Modal Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
               <button onClick={() => setSelectedCandidateModal(null)} className="secondary-btn">
                 Close Audit
               </button>

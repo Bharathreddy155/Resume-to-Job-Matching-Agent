@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import CandidateView from './components/CandidateView';
 import RecruiterView from './components/RecruiterView';
 import ApiKeyModal from './components/ApiKeyModal';
+import PitchGuideModal from './components/PitchGuideModal';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -14,6 +15,7 @@ export default function App() {
   const [jobDescription, setJobDescription] = useState('');
   const [apiKey, setApiKey] = useState(localStorage.getItem('matchpulse_gemini_key') || '');
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
 
   // Candidate Match States
   const [matchLoading, setMatchLoading] = useState(false);
@@ -33,6 +35,16 @@ export default function App() {
           setSampleResumes(data.resumes || []);
           setSelectedJobId(data.jobs[0].id);
           setJobDescription(data.jobs[0].description);
+
+          // Proactively run an initial match for Alex Chen so Candidate View is immediately populated with glowing dial!
+          if (data.resumes && data.resumes.length > 0) {
+            handleMatchSingle({
+              resume_text: data.resumes[0].text,
+              job_description: data.jobs[0].description,
+              candidate_name: data.resumes[0].name,
+              api_key: apiKey
+            });
+          }
         }
       })
       .catch(err => console.error("Could not fetch sample data:", err));
@@ -70,7 +82,6 @@ export default function App() {
       return data;
     } catch (err) {
       console.error('Match failed:', err);
-      alert('Match failed. Ensure FastAPI server is running on port 8000.');
     } finally {
       setMatchLoading(false);
     }
@@ -90,7 +101,6 @@ export default function App() {
       return data;
     } catch (err) {
       console.error('Batch match failed:', err);
-      alert('Batch match failed. Ensure FastAPI server is running on port 8000.');
     } finally {
       setBatchLoading(false);
     }
@@ -108,6 +118,7 @@ export default function App() {
         selectedJobId={selectedJobId}
         onSelectJob={handleSelectJob}
         onOpenKeyModal={() => setIsKeyModalOpen(true)}
+        onOpenPitchModal={() => setIsPitchModalOpen(true)}
         hasApiKey={!!apiKey}
       />
 
@@ -146,25 +157,42 @@ export default function App() {
         onSaveKey={handleSaveApiKey}
       />
 
+      {/* 3-Minute Hackathon Demo & Pitch Teleprompter */}
+      <PitchGuideModal
+        isOpen={isPitchModalOpen}
+        onClose={() => setIsPitchModalOpen(false)}
+        onSelectCandidateMode={() => setActiveMode('candidate')}
+        onSelectRecruiterMode={() => setActiveMode('recruiter')}
+      />
+
       {/* Footer */}
       <footer style={{
         borderTop: '1px solid var(--border-subtle)',
-        background: 'rgba(9, 13, 22, 0.9)',
+        background: 'rgba(8, 12, 21, 0.95)',
         padding: '20px 24px',
         textAlign: 'center',
-        fontSize: '0.8rem',
+        fontSize: '0.82rem',
         color: 'var(--text-dim)'
       }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
-            MatchPulse AI • Intelligent Resume-to-Job Matching System • Hackathon Project
+            MatchPulse AI • Next-Generation Semantic Hiring Agent • Hackathon Presentation Edition
           </div>
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <span>Multi-Factor Scoring</span>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <span>50% Skills</span>
             <span>•</span>
-            <span>Semantic Ontology Mapping</span>
+            <span>25% Experience</span>
             <span>•</span>
-            <span>Gemini AI Reasoner</span>
+            <span>15% Domain</span>
+            <span>•</span>
+            <span>10% Education</span>
+            <span>•</span>
+            <button
+              onClick={() => setIsPitchModalOpen(true)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--accent-cyan)', cursor: 'pointer', fontWeight: 600 }}
+            >
+              Open Pitch Script
+            </button>
           </div>
         </div>
       </footer>
