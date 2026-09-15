@@ -120,8 +120,8 @@ export default function CustomRoleModal({
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: '#e0e7ff',
-              color: 'var(--accent-primary)',
+              background: '#eff6ff',
+              color: '#2563eb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -187,7 +187,7 @@ export default function CustomRoleModal({
                       type="button"
                       onClick={() => { onSelectRole(cr.id); onClose(); }}
                       className="secondary-btn"
-                      style={{ padding: '4px 10px', fontSize: '0.75rem', borderColor: 'var(--accent-primary)', color: 'var(--accent-primary)' }}
+                      style={{ padding: '4px 10px', fontSize: '0.75rem', borderColor: '#2563eb', color: '#2563eb' }}
                     >
                       Use Role
                     </button>
@@ -325,7 +325,7 @@ export default function CustomRoleModal({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--accent-primary)',
+                  color: '#2563eb',
                   fontSize: '0.78rem',
                   fontWeight: 600,
                   cursor: 'pointer',

@@ -42,19 +42,19 @@ export default function Navbar({
         flexWrap: 'wrap',
         gap: '16px'
       }}>
-        {/* Brand */}
+        {/* Brand with Pure Blue App Icon */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
             width: '42px',
             height: '42px',
             borderRadius: '12px',
-            background: 'var(--grad-primary)',
+            background: 'linear-gradient(135deg, #2563eb 0%, #0284c7 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(79, 70, 229, 0.3)'
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
           }}>
-            <Sparkles size={22} color="#fff" />
+            <Sparkles size={22} color="#ffffff" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -143,12 +143,12 @@ export default function Navbar({
               ))}
             </optgroup>
 
-            <option value="__custom_new__" style={{ fontWeight: 700, color: 'var(--accent-primary)' }}>
+            <option value="__custom_new__" style={{ fontWeight: 700, color: '#2563eb' }}>
               ➕ + Add Custom Role...
             </option>
           </select>
 
-          {/* Dedicated + Custom Role Button */}
+          {/* Dedicated + Custom Role Button in Blue */}
           <button
             type="button"
             onClick={onOpenCustomRoleModal}
@@ -160,9 +160,9 @@ export default function Navbar({
               display: 'flex',
               alignItems: 'center',
               gap: '5px',
-              borderColor: '#c7d2fe',
-              background: '#eef2ff',
-              color: '#4338ca'
+              borderColor: '#bfdbfe',
+              background: '#eff6ff',
+              color: '#1d4ed8'
             }}
             title="Create your own custom job role and requirements"
           >

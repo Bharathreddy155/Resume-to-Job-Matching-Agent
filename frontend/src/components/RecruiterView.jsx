@@ -216,7 +216,7 @@ export default function RecruiterView({
               fontFamily: 'var(--font-body)',
               transition: 'border-color 0.2s ease'
             }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--accent-indigo)'}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
             onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
           />
 
@@ -235,12 +235,12 @@ export default function RecruiterView({
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  background: 'rgba(99, 102, 241, 0.1)',
+                  background: '#eff6ff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  <Users size={18} color="var(--accent-indigo)" />
+                  <Users size={18} color="var(--accent-blue)" />
                 </div>
                 <div>
                   <h2 style={{ fontSize: '1.15rem' }}>Candidate Pool</h2>
@@ -259,19 +259,19 @@ export default function RecruiterView({
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               style={{
-                border: isDragOver ? '2px dashed var(--accent-indigo)' : '1px dashed #cbd5e1',
+                border: isDragOver ? '2px dashed var(--accent-blue)' : '1px dashed #cbd5e1',
                 borderRadius: '12px',
                 padding: '12px 14px',
                 marginBottom: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                background: isDragOver ? '#eef2ff' : '#f8fafc',
+                background: isDragOver ? '#eff6ff' : '#f8fafc',
                 transition: 'all 0.2s ease'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <UploadCloud size={22} color="var(--accent-indigo)" />
+                <UploadCloud size={22} color="var(--accent-blue)" />
                 <div>
                   <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     {multiUploadLoading ? 'Parsing Resumes...' : 'Drag & Drop Multiple Resumes'}
@@ -568,7 +568,7 @@ export default function RecruiterView({
                             </span>
                           ))}
                           {cand.semantic_matches && cand.semantic_matches.slice(0, 2).map((m, i) => (
-                            <span key={`sem_${i}`} className="badge badge-purple" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
+                            <span key={`sem_${i}`} className="badge badge-blue" style={{ fontSize: '0.7rem', padding: '2px 7px' }}>
                               ⚡ {m.skill}
                             </span>
                           ))}
@@ -698,13 +698,13 @@ export default function RecruiterView({
               </div>
               <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Experience (25%)</div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-indigo)' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-blue)' }}>
                   {selectedCandidateModal.breakdown.experience_alignment}%
                 </div>
               </div>
               <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Domain (15%)</div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0284c7' }}>
                   {selectedCandidateModal.breakdown.domain_context}%
                 </div>
               </div>
@@ -735,7 +735,7 @@ export default function RecruiterView({
 
               {/* Semantic Bridges */}
               <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
-                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Sparkles size={16} /> Semantic Bridges ({selectedCandidateModal.semantic_matches?.length || 0})
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -745,8 +745,8 @@ export default function RecruiterView({
                     selectedCandidateModal.semantic_matches.map((m, idx) => (
                       <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{m.matched_via}</span>
-                        <ArrowRight size={12} color="var(--accent-cyan)" />
-                        <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{m.skill}</span>
+                        <ArrowRight size={12} color="var(--accent-blue)" />
+                        <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>{m.skill}</span>
                       </div>
                     ))
                   )}
@@ -774,8 +774,8 @@ export default function RecruiterView({
             </div>
 
             {/* Recruiter Probing Questions */}
-            <div className="glass-panel" style={{ padding: '18px', borderLeft: '4px solid var(--accent-purple)', background: '#f8fafc' }}>
-              <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '10px' }}>
+            <div className="glass-panel" style={{ padding: '18px', borderLeft: '4px solid var(--accent-blue)', background: '#f8fafc' }}>
+              <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '10px' }}>
                 Recommended Interview Probing Script
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

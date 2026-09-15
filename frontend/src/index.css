@@ -12,23 +12,25 @@
   --bg-card: #ffffff;
   --bg-card-hover: #ffffff;
   --border-subtle: #e2e8f0;
-  --border-glow: rgba(99, 102, 241, 0.25);
+  --border-glow: rgba(37, 99, 235, 0.2);
   --border-accent: rgba(2, 132, 199, 0.3);
 
-  /* Primary Palette (tuned for sharp contrast on light mode) */
+  /* Primary Palette (Crisp Modern Blue & Clean Light Mode Accents) */
+  --accent-primary: #2563eb;
+  --accent-blue: #2563eb;
+  --accent-blue-dark: #1d4ed8;
+  --accent-blue-light: #0284c7;
   --accent-cyan: #0284c7;
-  --accent-indigo: #4f46e5;
-  --accent-purple: #7c3aed;
   --accent-emerald: #059669;
   --accent-amber: #d97706;
   --accent-rose: #e11d48;
 
-  /* Gradients */
-  --grad-primary: linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%);
+  /* Gradients (Pure High-Impact Blues) */
+  --grad-primary: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
   --grad-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --grad-amber: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   --grad-rose: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-  --grad-semantic: linear-gradient(135deg, #f0fdfa 0%, #f5f3ff 100%);
+  --grad-semantic: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
   --grad-card: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 
   /* Text colors */
@@ -43,8 +45,8 @@
   --shadow-card: 0 1px 3px rgba(0,0,0,0.05), 0 10px 24px -5px rgba(15, 23, 42, 0.06);
 
   /* Subtle Soft Glows */
+  --glow-blue: 0 4px 18px rgba(37, 99, 235, 0.25);
   --glow-cyan: 0 4px 18px rgba(2, 132, 199, 0.2);
-  --glow-indigo: 0 4px 18px rgba(79, 70, 229, 0.2);
   --glow-emerald: 0 4px 18px rgba(5, 150, 105, 0.2);
   --glow-gold: 0 4px 18px rgba(217, 119, 6, 0.2);
   --glow-rose: 0 4px 18px rgba(225, 29, 72, 0.2);
@@ -59,10 +61,10 @@
 body {
   background-color: var(--bg-primary);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 45%),
-    radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.08) 0px, transparent 45%),
-    radial-gradient(at 50% 100%, rgba(124, 58, 237, 0.06) 0px, transparent 50%),
-    radial-gradient(at 80% 50%, rgba(16, 185, 129, 0.05) 0px, transparent 40%);
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.06) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(2, 132, 199, 0.06) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%),
+    radial-gradient(at 80% 50%, rgba(16, 185, 129, 0.04) 0px, transparent 40%);
   background-attachment: fixed;
   color: var(--text-main);
   font-family: var(--font-body);
@@ -116,8 +118,8 @@ textarea, input[type="text"], input[type="password"] {
 }
 
 textarea:focus, input[type="text"]:focus, input[type="password"]:focus {
-  border-color: var(--accent-indigo) !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+  border-color: var(--accent-blue) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
 
 textarea::placeholder, input::placeholder {
@@ -147,7 +149,7 @@ textarea::placeholder, input::placeholder {
   justify-content: center;
   gap: 8px;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
   position: relative;
   overflow: hidden;
 }
@@ -175,7 +177,7 @@ textarea::placeholder, input::placeholder {
 
 .gradient-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 8px 22px rgba(37, 99, 235, 0.4);
 }
 
 .gradient-btn:active {
@@ -211,6 +213,28 @@ textarea::placeholder, input::placeholder {
   color: #0f172a;
 }
 
+/* Primary Button in Blue */
+.primary-btn {
+  background: var(--grad-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+}
+
+.primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
+}
+
 /* Crisp Clean Badges for Light Theme */
 .badge {
   display: inline-flex;
@@ -241,10 +265,10 @@ textarea::placeholder, input::placeholder {
   color: #0f766e;
 }
 
-.badge-purple {
-  background: #f5f3ff;
-  border: 1px solid #ddd6fe;
-  color: #6d28d9;
+.badge-blue, .badge-purple {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
 }
 
 .badge-amber {
@@ -259,10 +283,10 @@ textarea::placeholder, input::placeholder {
   color: #be123c;
 }
 
-/* Semantic Bridge Chip in Light Theme */
+/* Semantic Bridge Chip in Blue Tint */
 .semantic-bridge-chip {
-  background: linear-gradient(135deg, #f0fdfa 0%, #f5f3ff 100%);
-  border: 1px solid #ddd6fe;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+  border: 1px solid #bfdbfe;
   border-radius: 10px;
   padding: 10px 14px;
   display: flex;
@@ -273,8 +297,8 @@ textarea::placeholder, input::placeholder {
 }
 
 .semantic-bridge-chip:hover {
-  border-color: #a78bfa;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.12);
+  border-color: #60a5fa;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
   transform: translateX(3px);
 }
 
@@ -302,9 +326,9 @@ textarea::placeholder, input::placeholder {
 
 /* Drag-and-Drop Active State */
 .dropzone-active {
-  border: 2px dashed var(--accent-indigo) !important;
-  background: #eef2ff !important;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  border: 2px dashed var(--accent-blue) !important;
+  background: #eff6ff !important;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.2);
   transform: scale(1.01);
 }
 

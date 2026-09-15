@@ -162,7 +162,7 @@ export default function CandidateView({
               fontFamily: 'var(--font-body)',
               transition: 'border-color 0.2s ease'
             }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--accent-indigo)'}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
             onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
           />
 
@@ -180,12 +180,12 @@ export default function CandidateView({
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: 'rgba(99, 102, 241, 0.1)',
+                background: '#eff6ff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <UploadCloud size={18} color="var(--accent-indigo)" />
+                <UploadCloud size={18} color="var(--accent-blue)" />
               </div>
               <h2 style={{ fontSize: '1.15rem' }}>Candidate Resume</h2>
             </div>
@@ -203,9 +203,9 @@ export default function CandidateView({
                       padding: '4px 10px',
                       fontSize: '0.76rem',
                       fontWeight: isSelected ? 700 : 500,
-                      background: isSelected ? '#eef2ff' : '#ffffff',
-                      borderColor: isSelected ? 'var(--accent-indigo)' : 'var(--border-subtle)',
-                      color: isSelected ? 'var(--accent-indigo)' : 'var(--text-main)'
+                      background: isSelected ? '#eff6ff' : '#ffffff',
+                      borderColor: isSelected ? 'var(--accent-blue)' : 'var(--border-subtle)',
+                      color: isSelected ? 'var(--accent-blue)' : 'var(--text-main)'
                     }}
                   >
                     {s.name.split(' ')[0]}
@@ -221,14 +221,14 @@ export default function CandidateView({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             style={{
-              border: isDragOver ? '2px dashed var(--accent-indigo)' : '1px dashed #cbd5e1',
+              border: isDragOver ? '2px dashed var(--accent-blue)' : '1px dashed #cbd5e1',
               borderRadius: '12px',
               padding: '16px 20px',
               marginBottom: '14px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              background: isDragOver ? '#eef2ff' : '#f8fafc',
+              background: isDragOver ? '#eff6ff' : '#f8fafc',
               transition: 'all 0.25s ease'
             }}
           >
@@ -244,7 +244,7 @@ export default function CandidateView({
                 justifyContent: 'center',
                 boxShadow: 'var(--shadow-sm)'
               }}>
-                <FileText size={20} color="var(--accent-indigo)" />
+                <FileText size={20} color="var(--accent-blue)" />
               </div>
               <div>
                 <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
@@ -288,13 +288,13 @@ export default function CandidateView({
               fontFamily: 'var(--font-body)',
               transition: 'border-color 0.2s ease'
             }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--accent-indigo)'}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
             onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
           />
 
           <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              Evaluating Profile: <strong style={{ color: '#fff', fontSize: '0.9rem' }}>{candidateName}</strong>
+              Evaluating Profile: <strong style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>{candidateName}</strong>
             </div>
             <button
               onClick={handleRunMatch}
@@ -379,30 +379,30 @@ export default function CandidateView({
                 </div>
 
                 {/* Experience Alignment (25%) */}
-                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-indigo)' }}>
+                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-blue)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>Experience</span>
-                    <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>25% Wt</span>
+                    <span className="badge badge-blue" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>25% Wt</span>
                   </div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-indigo)' }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
                     {matchResult.match_result.breakdown.experience_alignment}%
                   </div>
                   <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${matchResult.match_result.breakdown.experience_alignment}%`, height: '100%', background: 'linear-gradient(90deg, #4f46e5, #818cf8)', borderRadius: '3px' }} />
+                    <div style={{ width: `${matchResult.match_result.breakdown.experience_alignment}%`, height: '100%', background: 'linear-gradient(90deg, #2563eb, #60a5fa)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
                 {/* Domain Context (15%) */}
-                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-purple)' }}>
+                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid #0284c7' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>Domain Fit</span>
-                    <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>15% Wt</span>
+                    <span className="badge badge-cyan" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>15% Wt</span>
                   </div>
-                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-purple)' }}>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>
                     {matchResult.match_result.breakdown.domain_context}%
                   </div>
                   <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${matchResult.match_result.breakdown.domain_context}%`, height: '100%', background: 'linear-gradient(90deg, #7c3aed, #c084fc)', borderRadius: '3px' }} />
+                    <div style={{ width: `${matchResult.match_result.breakdown.domain_context}%`, height: '100%', background: 'linear-gradient(90deg, #0284c7, #38bdf8)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
@@ -470,8 +470,8 @@ export default function CandidateView({
 
               {/* Semantic Equivalence Bridges (The Core Hackathon Differentiator) */}
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--accent-purple)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <Sparkles size={14} color="var(--accent-purple)" /> Semantic Equivalents & Bridges ({matchResult.match_result.semantic_matches.length})
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--accent-blue)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <Sparkles size={14} color="var(--accent-blue)" /> Semantic Equivalents & Bridges ({matchResult.match_result.semantic_matches.length})
                 </div>
                 
                 {matchResult.match_result.semantic_matches.length === 0 ? (
@@ -487,8 +487,8 @@ export default function CandidateView({
                             <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
                               {item.matched_via}
                             </span>
-                            <ArrowRight size={14} color="var(--accent-cyan)" />
-                            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                            <ArrowRight size={14} color="var(--accent-blue)" />
+                            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--accent-blue)' }}>
                               {item.skill}
                             </span>
                           </div>
@@ -496,7 +496,7 @@ export default function CandidateView({
                             {item.explanation || `Candidate skill '${item.matched_via}' satisfies job requirement '${item.skill}'`}
                           </div>
                         </div>
-                        <span className="badge badge-purple" style={{ fontSize: '0.7rem', padding: '3px 8px', whiteSpace: 'nowrap' }}>
+                        <span className="badge badge-blue" style={{ fontSize: '0.7rem', padding: '3px 8px', whiteSpace: 'nowrap' }}>
                           85% Bridge
                         </span>
                       </div>
@@ -655,7 +655,7 @@ export default function CandidateView({
 
               {/* Recruiter Probing Questions */}
               <div className="glass-panel" style={{ padding: '20px', background: '#f8fafc' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '14px' }}>
                   <HelpCircle size={18} /> Recruiter Interview Probing
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
