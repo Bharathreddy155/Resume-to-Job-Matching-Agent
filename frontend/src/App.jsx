@@ -168,11 +168,12 @@ export default function App() {
       {/* Footer */}
       <footer style={{
         borderTop: '1px solid var(--border-subtle)',
-        background: 'rgba(8, 12, 21, 0.95)',
+        background: '#ffffff',
         padding: '20px 24px',
         textAlign: 'center',
         fontSize: '0.82rem',
-        color: 'var(--text-dim)'
+        color: 'var(--text-muted)',
+        boxShadow: '0 -1px 3px rgba(0,0,0,0.02)'
       }}>
         <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>

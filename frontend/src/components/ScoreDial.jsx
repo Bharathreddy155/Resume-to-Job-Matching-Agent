@@ -13,32 +13,36 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
 
   const colorMap = {
     emerald: {
-      stop1: '#34d399',
+      stop1: '#10b981',
       stop2: '#059669',
-      glow: 'rgba(16, 185, 129, 0.45)',
-      text: '#34d399',
-      halo: 'rgba(16, 185, 129, 0.15)'
+      glow: 'rgba(5, 150, 105, 0.25)',
+      text: '#047857',
+      bg: '#ecfdf5',
+      border: '#a7f3d0'
     },
     cyan: {
-      stop1: '#38bdf8',
-      stop2: '#0284c7',
-      glow: 'rgba(6, 182, 212, 0.45)',
-      text: '#38bdf8',
-      halo: 'rgba(6, 182, 212, 0.15)'
+      stop1: '#0284c7',
+      stop2: '#0369a1',
+      glow: 'rgba(2, 132, 199, 0.25)',
+      text: '#0369a1',
+      bg: '#f0fdfa',
+      border: '#99f6e4'
     },
     amber: {
-      stop1: '#fbbf24',
+      stop1: '#f59e0b',
       stop2: '#d97706',
-      glow: 'rgba(245, 158, 11, 0.45)',
-      text: '#fbbf24',
-      halo: 'rgba(245, 158, 11, 0.15)'
+      glow: 'rgba(217, 119, 6, 0.25)',
+      text: '#b45309',
+      bg: '#fffbeb',
+      border: '#fde68a'
     },
     rose: {
-      stop1: '#fb7185',
+      stop1: '#f43f5e',
       stop2: '#e11d48',
-      glow: 'rgba(244, 63, 94, 0.45)',
-      text: '#fb7185',
-      halo: 'rgba(244, 63, 94, 0.15)'
+      glow: 'rgba(225, 29, 72, 0.25)',
+      text: '#be123c',
+      bg: '#fff1f2',
+      border: '#fecdd3'
     },
   };
 
@@ -46,27 +50,12 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', width: size, height: size }}>
-      {/* Ambient Pulsing Halo */}
-      <div style={{
-        position: 'absolute',
-        inset: '10%',
-        borderRadius: '50%',
-        background: `radial-gradient(circle, ${theme.halo} 0%, transparent 70%)`,
-        filter: 'blur(12px)',
-        pointerEvents: 'none',
-        zIndex: 0
-      }} />
-
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', overflow: 'visible', zIndex: 1 }}>
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor={theme.stop1} />
             <stop offset="100%" stopColor={theme.stop2} />
           </linearGradient>
-          <filter id={`glow_${gradId}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
         </defs>
 
         {/* Outer subtle guide ring */}
@@ -74,7 +63,7 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
           cx={size / 2}
           cy={size / 2}
           r={radius + strokeWidth * 0.65}
-          stroke="rgba(255, 255, 255, 0.04)"
+          stroke="#e2e8f0"
           strokeWidth="1"
           strokeDasharray="3 3"
           fill="transparent"
@@ -85,7 +74,7 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="rgba(255, 255, 255, 0.08)"
+          stroke="#e2e8f0"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -103,7 +92,7 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
           fill="transparent"
           style={{
             transition: 'stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
-            filter: `drop-shadow(0 0 12px ${theme.glow})`
+            filter: `drop-shadow(0 2px 6px ${theme.glow})`
           }}
         />
       </svg>
@@ -123,7 +112,7 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
           fontSize: size > 130 ? '2.5rem' : '1.75rem',
           fontWeight: 900,
           lineHeight: 1,
-          color: '#ffffff',
+          color: 'var(--text-main)',
           letterSpacing: '-0.03em'
         }}>
           {score}
@@ -135,11 +124,11 @@ export default function ScoreDial({ score, tier, color = "cyan", size = 160 }) {
           fontWeight: 700,
           marginTop: '3px',
           textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          background: 'rgba(15, 23, 42, 0.7)',
+          letterSpacing: '0.06em',
+          background: theme.bg,
           padding: '2px 8px',
           borderRadius: '999px',
-          border: `1px solid ${theme.glow}`
+          border: `1px solid ${theme.border}`
         }}>
           {tier || 'Score'}
         </div>

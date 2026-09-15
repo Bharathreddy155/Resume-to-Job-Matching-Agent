@@ -150,11 +150,11 @@ export default function CandidateView({
             placeholder="Paste or edit the target job specifications, required stack, and experience..."
             style={{
               width: '100%',
-              background: 'rgba(11, 17, 32, 0.8)',
+              background: '#ffffff',
               border: '1px solid var(--border-subtle)',
               borderRadius: '12px',
               padding: '14px',
-              color: '#f8fafc',
+              color: 'var(--text-main)',
               fontSize: '0.88rem',
               lineHeight: 1.6,
               resize: 'vertical',
@@ -162,7 +162,7 @@ export default function CandidateView({
               fontFamily: 'var(--font-body)',
               transition: 'border-color 0.2s ease'
             }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--accent-cyan)'}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-indigo)'}
             onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
           />
 
@@ -180,7 +180,7 @@ export default function CandidateView({
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: 'rgba(99, 102, 241, 0.15)',
+                background: 'rgba(99, 102, 241, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -202,10 +202,10 @@ export default function CandidateView({
                     style={{
                       padding: '4px 10px',
                       fontSize: '0.76rem',
-                      fontWeight: isSelected ? 600 : 400,
-                      background: isSelected ? 'rgba(99, 102, 241, 0.28)' : 'rgba(30, 41, 59, 0.5)',
+                      fontWeight: isSelected ? 700 : 500,
+                      background: isSelected ? '#eef2ff' : '#ffffff',
                       borderColor: isSelected ? 'var(--accent-indigo)' : 'var(--border-subtle)',
-                      color: isSelected ? '#fff' : 'var(--text-muted)'
+                      color: isSelected ? 'var(--accent-indigo)' : 'var(--text-main)'
                     }}
                   >
                     {s.name.split(' ')[0]}
@@ -215,34 +215,48 @@ export default function CandidateView({
             </div>
           </div>
 
-          {/* Interactive Drag & Drop Area */}
+          {/* Drag-and-Drop / Browse File Upload Area */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`glass-panel ${isDragOver ? 'dropzone-active' : ''}`}
             style={{
-              border: isDragOver ? '2px dashed var(--accent-cyan)' : '1px dashed rgba(148, 163, 184, 0.25)',
-              padding: '12px 16px',
-              marginBottom: '12px',
+              border: isDragOver ? '2px dashed var(--accent-indigo)' : '1px dashed #cbd5e1',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              marginBottom: '14px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              transition: 'all 0.2s ease'
+              background: isDragOver ? '#eef2ff' : '#f8fafc',
+              transition: 'all 0.25s ease'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <FileText size={22} color={isDragOver ? 'var(--accent-cyan)' : 'var(--accent-indigo)'} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'var(--shadow-sm)'
+              }}>
+                <FileText size={20} color="var(--accent-indigo)" />
+              </div>
               <div>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#fff' }}>
-                  {fileName ? fileName : 'Drag & Drop PDF / DOCX or Browse'}
+                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  {fileName ? fileName : 'Upload or Drag & Drop Resume'}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Auto-extracts candidate identity, career tenure, and skills
+                  Supports PDF, DOCX, and TXT • Auto-extracts skills & certifications
                 </div>
               </div>
             </div>
-            <label className="secondary-btn" style={{ cursor: 'pointer', margin: 0, padding: '6px 12px', fontSize: '0.8rem' }}>
+
+            <label className="secondary-btn" style={{ cursor: 'pointer', margin: 0, fontWeight: 600 }}>
               <span>{uploadLoading ? 'Parsing...' : 'Browse File'}</span>
               <input
                 type="file"
@@ -254,19 +268,19 @@ export default function CandidateView({
             </label>
           </div>
 
-          {/* Resume Raw Textarea */}
+          {/* Resume Text Input */}
           <textarea
             value={resumeText}
             onChange={(e) => setResumeText(e.target.value)}
-            rows={9}
-            placeholder="Or paste candidate resume markdown or text directly..."
+            rows={8}
+            placeholder="Or paste resume text directly here..."
             style={{
               width: '100%',
-              background: 'rgba(11, 17, 32, 0.8)',
+              background: '#ffffff',
               border: '1px solid var(--border-subtle)',
               borderRadius: '12px',
               padding: '14px',
-              color: '#f8fafc',
+              color: 'var(--text-main)',
               fontSize: '0.88rem',
               lineHeight: 1.6,
               resize: 'vertical',
@@ -305,7 +319,8 @@ export default function CandidateView({
             style={{
               padding: '28px',
               borderLeft: `6px solid var(--accent-${matchResult.match_result.tier_color})`,
-              background: 'linear-gradient(135deg, rgba(14, 21, 38, 0.85) 0%, rgba(20, 31, 54, 0.8) 100%)'
+              background: '#ffffff',
+              boxShadow: 'var(--shadow-card)'
             }}
           >
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '28px' }}>
@@ -320,7 +335,7 @@ export default function CandidateView({
                 />
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
                       {matchResult.candidate_name}
                     </h2>
                     <span className={`badge badge-${matchResult.match_result.tier_color}`} style={{ fontSize: '0.85rem', padding: '4px 12px' }}>
@@ -328,18 +343,18 @@ export default function CandidateView({
                     </span>
                   </div>
                   
-                  <p style={{ color: '#cbd5e1', fontSize: '0.92rem', maxWidth: '620px', lineHeight: 1.6 }}>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', maxWidth: '620px', lineHeight: 1.6 }}>
                     {matchResult.explanation?.summary}
                   </p>
 
                   <div style={{ display: 'flex', gap: '14px', marginTop: '14px', fontSize: '0.82rem', color: 'var(--text-dim)', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="glass-panel" style={{ padding: '3px 10px', borderRadius: '6px' }}>
-                      Tenure: <strong style={{ color: '#fff' }}>{matchResult.match_result.stats.candidate_exp_years} yrs</strong>
+                    <span className="glass-panel" style={{ padding: '4px 12px', borderRadius: '6px' }}>
+                      Tenure: <strong style={{ color: 'var(--text-main)' }}>{matchResult.match_result.stats.candidate_exp_years} yrs</strong>
                     </span>
-                    <span className="glass-panel" style={{ padding: '3px 10px', borderRadius: '6px' }}>
-                      Education: <strong style={{ color: '#fff' }}>{matchResult.metadata.education}</strong>
+                    <span className="glass-panel" style={{ padding: '4px 12px', borderRadius: '6px' }}>
+                      Education: <strong style={{ color: 'var(--text-main)' }}>{matchResult.metadata.education}</strong>
                     </span>
-                    <span className="glass-panel" style={{ padding: '3px 10px', borderRadius: '6px', borderColor: 'rgba(6,182,212,0.3)' }}>
+                    <span className="glass-panel" style={{ padding: '4px 12px', borderRadius: '6px', borderColor: '#a5f3fc' }}>
                       Engine: <strong style={{ color: 'var(--accent-cyan)' }}>{matchResult.explanation?.engine || 'Semantic Agent'}</strong>
                     </span>
                   </div>
@@ -350,7 +365,7 @@ export default function CandidateView({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', minWidth: '320px', flex: '1 1 320px' }}>
                 
                 {/* Skill Match (50%) */}
-                <div className="glass-panel" style={{ padding: '14px', borderTop: '2px solid var(--accent-cyan)' }}>
+                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-cyan)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>Skill Match</span>
                     <span className="badge badge-cyan" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>50% Wt</span>
@@ -358,13 +373,13 @@ export default function CandidateView({
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
                     {matchResult.match_result.breakdown.skill_match}%
                   </div>
-                  <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${matchResult.match_result.breakdown.skill_match}%`, height: '100%', background: 'linear-gradient(90deg, #06b6d4, #38bdf8)', borderRadius: '3px' }} />
+                  <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${matchResult.match_result.breakdown.skill_match}%`, height: '100%', background: 'linear-gradient(90deg, #0284c7, #38bdf8)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
                 {/* Experience Alignment (25%) */}
-                <div className="glass-panel" style={{ padding: '14px', borderTop: '2px solid var(--accent-indigo)' }}>
+                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-indigo)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>Experience</span>
                     <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>25% Wt</span>
@@ -372,13 +387,13 @@ export default function CandidateView({
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-indigo)' }}>
                     {matchResult.match_result.breakdown.experience_alignment}%
                   </div>
-                  <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${matchResult.match_result.breakdown.experience_alignment}%`, height: '100%', background: 'linear-gradient(90deg, #6366f1, #818cf8)', borderRadius: '3px' }} />
+                  <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${matchResult.match_result.breakdown.experience_alignment}%`, height: '100%', background: 'linear-gradient(90deg, #4f46e5, #818cf8)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
                 {/* Domain Context (15%) */}
-                <div className="glass-panel" style={{ padding: '14px', borderTop: '2px solid var(--accent-purple)' }}>
+                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-purple)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>Domain Fit</span>
                     <span className="badge badge-purple" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>15% Wt</span>
@@ -386,13 +401,13 @@ export default function CandidateView({
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-purple)' }}>
                     {matchResult.match_result.breakdown.domain_context}%
                   </div>
-                  <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${matchResult.match_result.breakdown.domain_context}%`, height: '100%', background: 'linear-gradient(90deg, #8b5cf6, #c084fc)', borderRadius: '3px' }} />
+                  <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${matchResult.match_result.breakdown.domain_context}%`, height: '100%', background: 'linear-gradient(90deg, #7c3aed, #c084fc)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
                 {/* Education & Credentials (10%) */}
-                <div className="glass-panel" style={{ padding: '14px', borderTop: '2px solid var(--accent-emerald)' }}>
+                <div className="glass-panel" style={{ padding: '14px', borderTop: '3px solid var(--accent-emerald)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '0.76rem', color: 'var(--text-dim)', fontWeight: 600 }}>Credentials</span>
                     <span className="badge badge-emerald" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>10% Wt</span>
@@ -400,8 +415,8 @@ export default function CandidateView({
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>
                     {matchResult.match_result.breakdown.education_credentials}%
                   </div>
-                  <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
-                    <div style={{ width: `${matchResult.match_result.breakdown.education_credentials}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '3px' }} />
+                  <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${matchResult.match_result.breakdown.education_credentials}%`, height: '100%', background: 'linear-gradient(90deg, #059669, #34d399)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
@@ -447,7 +462,7 @@ export default function CandidateView({
                   {matchResult.match_result.exact_matches.map((item, idx) => (
                     <span key={idx} className="badge badge-emerald" title={item.explanation} style={{ padding: '6px 12px' }}>
                       <CheckCircle2 size={13} />
-                      <strong style={{ color: '#fff' }}>{item.skill}</strong>
+                      <strong style={{ color: '#065f46' }}>{item.skill}</strong>
                     </span>
                   ))}
                 </div>
@@ -469,7 +484,7 @@ export default function CandidateView({
                       <div key={idx} className="semantic-bridge-chip">
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff' }}>
+                            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>
                               {item.matched_via}
                             </span>
                             <ArrowRight size={14} color="var(--accent-cyan)" />
@@ -499,7 +514,7 @@ export default function CandidateView({
                     width: '32px',
                     height: '32px',
                     borderRadius: '8px',
-                    background: 'rgba(244, 63, 94, 0.15)',
+                    background: 'rgba(244, 63, 94, 0.12)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -535,19 +550,20 @@ export default function CandidateView({
                         style={{
                           padding: '12px 14px',
                           borderLeft: '4px solid var(--accent-rose)',
-                          background: 'rgba(244, 63, 94, 0.04)'
+                          background: '#fff1f2',
+                          borderColor: '#fecdd3'
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ color: '#fff', fontSize: '0.9rem', fontWeight: 700 }}>
+                          <span style={{ color: '#9f1239', fontSize: '0.9rem', fontWeight: 700 }}>
                             {item.skill}
                           </span>
                           <span className="badge badge-rose" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
                             Critical Gap
                           </span>
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: '#cbd5e1', marginTop: '6px', lineHeight: 1.4 }}>
-                          💡 <strong style={{ color: 'var(--accent-amber)' }}>Action Plan:</strong> {item.recommendation}
+                        <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '6px', lineHeight: 1.4 }}>
+                          💡 <strong style={{ color: '#b45309' }}>Action Plan:</strong> {item.recommendation}
                         </div>
                       </div>
                     ))}
@@ -582,7 +598,7 @@ export default function CandidateView({
                   width: '36px',
                   height: '36px',
                   borderRadius: '10px',
-                  background: 'rgba(245, 158, 11, 0.15)',
+                  background: 'rgba(245, 158, 11, 0.12)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -590,7 +606,7 @@ export default function CandidateView({
                   <Lightbulb size={20} color="var(--accent-amber)" />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.25rem' }}>AI Action Plan & Strategic Insights</h3>
+                  <h3 style={{ fontSize: '1.25rem', color: 'var(--text-main)' }}>AI Action Plan & Strategic Insights</h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     Actionable intelligence for candidate resume tailoring and recruiter screening
                   </p>
@@ -604,11 +620,11 @@ export default function CandidateView({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
               
               {/* Key Strengths */}
-              <div className="glass-panel" style={{ padding: '20px' }}>
+              <div className="glass-panel" style={{ padding: '20px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '14px' }}>
                   <TrendingUp size={18} /> Candidate Core Strengths
                 </div>
-                <ul style={{ paddingLeft: '18px', fontSize: '0.86rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <ul style={{ paddingLeft: '18px', fontSize: '0.86rem', color: 'var(--text-main)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {matchResult.explanation?.key_strengths?.map((str, idx) => (
                     <li key={idx} style={{ lineHeight: 1.5 }}>{str}</li>
                   ))}
@@ -616,13 +632,13 @@ export default function CandidateView({
               </div>
 
               {/* Resume Optimization Tips */}
-              <div className="glass-panel" style={{ padding: '20px' }}>
+              <div className="glass-panel" style={{ padding: '20px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '14px' }}>
                   <BookOpen size={18} /> Resume Tailoring Tips
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {matchResult.explanation?.tailoring_recommendations?.map((tip, idx) => (
-                    <div key={idx} style={{ fontSize: '0.86rem', color: '#cbd5e1', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                    <div key={idx} style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                       <span>• {tip}</span>
                       <button
                         onClick={() => copyToClipboard(tip, `tip_${idx}`)}
@@ -638,13 +654,13 @@ export default function CandidateView({
               </div>
 
               {/* Recruiter Probing Questions */}
-              <div className="glass-panel" style={{ padding: '20px' }}>
+              <div className="glass-panel" style={{ padding: '20px', background: '#f8fafc' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', fontWeight: 700, fontSize: '0.92rem', marginBottom: '14px' }}>
                   <HelpCircle size={18} /> Recruiter Interview Probing
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {matchResult.explanation?.recruiter_interview_questions?.map((q, idx) => (
-                    <div key={idx} style={{ fontSize: '0.86rem', color: '#cbd5e1', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                    <div key={idx} style={{ fontSize: '0.86rem', color: 'var(--text-main)', lineHeight: 1.5, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
                       <span>• {q}</span>
                       <button
                         onClick={() => copyToClipboard(q, `probe_${idx}`)}

@@ -14,13 +14,14 @@ export default function Navbar({
   return (
     <header style={{
       borderBottom: '1px solid var(--border-subtle)',
-      background: 'rgba(8, 12, 21, 0.88)',
+      background: 'rgba(255, 255, 255, 0.92)',
       backdropFilter: 'blur(20px)',
       WebkitBackdropFilter: 'blur(20px)',
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      padding: '12px 24px'
+      padding: '12px 24px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
     }}>
       <div style={{
         maxWidth: '1440px',
@@ -41,7 +42,7 @@ export default function Navbar({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 20px rgba(99, 102, 241, 0.45)'
+            boxShadow: '0 4px 14px rgba(79, 70, 229, 0.3)'
           }}>
             <Sparkles size={22} color="#fff" />
           </div>
@@ -52,7 +53,7 @@ export default function Navbar({
                 fontSize: '1.3rem',
                 fontWeight: 900,
                 letterSpacing: '-0.02em',
-                color: '#fff'
+                color: 'var(--text-main)'
               }}>
                 MatchPulse <span className="gradient-text">AI</span>
               </span>
@@ -69,11 +70,11 @@ export default function Navbar({
         {/* Persona Mode Switcher */}
         <div style={{
           display: 'flex',
-          background: 'rgba(14, 21, 38, 0.95)',
+          background: '#f1f5f9',
           padding: '4px',
           borderRadius: '12px',
           border: '1px solid var(--border-subtle)',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
+          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
         }}>
           <button
             onClick={() => setActiveMode('candidate')}
@@ -103,14 +104,15 @@ export default function Navbar({
               value={selectedJobId}
               onChange={(e) => onSelectJob(e.target.value)}
               style={{
-                background: 'rgba(14, 21, 38, 0.9)',
+                background: '#ffffff',
                 border: '1px solid var(--border-subtle)',
-                color: '#fff',
+                color: 'var(--text-main)',
                 padding: '7px 12px',
                 borderRadius: '8px',
                 fontSize: '0.84rem',
                 outline: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-sm)'
               }}
             >
               {sampleJobs.map((j) => (
@@ -126,15 +128,15 @@ export default function Navbar({
             onClick={onOpenPitchModal}
             className="secondary-btn"
             style={{
-              borderColor: 'rgba(245, 158, 11, 0.5)',
-              background: 'rgba(245, 158, 11, 0.1)',
-              color: '#fde68a',
+              borderColor: '#fde68a',
+              background: '#fffbeb',
+              color: '#b45309',
               fontSize: '0.8rem',
               fontWeight: 600
             }}
             title="Open 3-minute hackathon pitch script & live cues"
           >
-            <Mic size={14} color="#fbbf24" />
+            <Mic size={14} color="#d97706" />
             <span>3-Min Pitch Guide</span>
           </button>
 

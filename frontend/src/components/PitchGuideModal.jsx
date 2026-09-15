@@ -83,7 +83,7 @@ export default function PitchGuideModal({
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.82)',
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
       backdropFilter: 'blur(12px)',
       display: 'flex',
       alignItems: 'center',
@@ -97,8 +97,9 @@ export default function PitchGuideModal({
         maxHeight: '90vh',
         overflowY: 'auto',
         padding: '30px',
-        border: '1px solid rgba(255, 255, 255, 0.16)',
-        boxShadow: '0 25px 65px rgba(0,0,0,0.85)'
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        boxShadow: 'var(--shadow-lg)'
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
@@ -107,17 +108,17 @@ export default function PitchGuideModal({
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, rgba(6,182,212,0.25) 0%, rgba(99,102,241,0.25) 100%)',
+              background: '#eef2ff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--accent-cyan)'
+              color: 'var(--accent-indigo)'
             }}>
               <Mic size={22} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 800 }}>3-Minute Hackathon Demo & Pitch Teleprompter</h3>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>3-Minute Hackathon Demo & Pitch Teleprompter</h3>
                 <span className="badge badge-emerald" style={{ fontSize: '0.7rem' }}>Member 2 Ownership</span>
               </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
@@ -147,16 +148,17 @@ export default function PitchGuideModal({
                   padding: '10px',
                   textAlign: 'left',
                   cursor: 'pointer',
-                  border: isActive ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                  background: isActive ? 'rgba(6, 182, 212, 0.12)' : 'rgba(15, 23, 42, 0.6)',
+                  border: isActive ? '1px solid var(--accent-indigo)' : '1px solid var(--border-subtle)',
+                  background: isActive ? '#eef2ff' : '#f8fafc',
                   borderRadius: '10px',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  boxShadow: isActive ? 'var(--shadow-sm)' : 'none'
                 }}
               >
-                <div style={{ fontSize: '0.72rem', color: isActive ? 'var(--accent-cyan)' : 'var(--text-dim)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div style={{ fontSize: '0.72rem', color: isActive ? 'var(--accent-indigo)' : 'var(--text-dim)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Clock size={12} /> {seg.time}
                 </div>
-                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: isActive ? '#fff' : 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: isActive ? 'var(--accent-indigo)' : 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {seg.title.split(':')[0]}
                 </div>
               </button>
@@ -165,13 +167,13 @@ export default function PitchGuideModal({
         </div>
 
         {/* Active Segment Detail Card */}
-        <div className="glass-panel" style={{ padding: '24px', marginBottom: '22px', borderLeft: `4px solid var(--accent-${current.tagColor})` }}>
+        <div className="glass-panel" style={{ padding: '24px', marginBottom: '22px', borderLeft: `4px solid var(--accent-${current.tagColor})`, background: '#f8fafc' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <div>
               <span className={`badge badge-${current.tagColor}`} style={{ fontSize: '0.75rem', marginBottom: '6px' }}>
                 {current.time} • {current.tag}
               </span>
-              <h4 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px' }}>{current.title}</h4>
+              <h4 style={{ fontSize: '1.2rem', fontWeight: 800, marginTop: '4px', color: 'var(--text-main)' }}>{current.title}</h4>
             </div>
           </div>
 
@@ -182,7 +184,7 @@ export default function PitchGuideModal({
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {current.talkingPoints.map((pt, i) => (
-                <div key={i} style={{ padding: '10px 14px', background: 'rgba(15, 23, 42, 0.7)', borderRadius: '8px', borderLeft: '2px solid var(--accent-cyan)', fontSize: '0.9rem', color: '#f1f5f9', lineHeight: 1.5 }}>
+                <div key={i} style={{ padding: '12px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', borderLeft: '3px solid var(--accent-indigo)', fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: 1.5, boxShadow: 'var(--shadow-sm)' }}>
                   {pt}
                 </div>
               ))}
@@ -190,7 +192,7 @@ export default function PitchGuideModal({
           </div>
 
           {/* Screen Cue */}
-          <div style={{ padding: '12px 16px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px dashed rgba(99, 102, 241, 0.4)', fontSize: '0.84rem', color: '#cbd5e1' }}>
+          <div style={{ padding: '12px 16px', background: '#f5f3ff', borderRadius: '8px', border: '1px dashed #c7d2fe', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
             🎬 <strong style={{ color: 'var(--accent-indigo)' }}>Live Screen Action:</strong> {current.demoCue}
           </div>
         </div>

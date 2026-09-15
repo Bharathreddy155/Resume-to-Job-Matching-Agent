@@ -21,7 +21,7 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveKey }) {
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backgroundColor: 'rgba(15, 23, 42, 0.45)',
       backdropFilter: 'blur(8px)',
       display: 'flex',
       alignItems: 'center',
@@ -33,8 +33,9 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveKey }) {
         maxWidth: '520px',
         width: '100%',
         padding: '28px',
-        border: '1px solid rgba(255, 255, 255, 0.15)',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        boxShadow: 'var(--shadow-lg)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -42,16 +43,16 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveKey }) {
               width: '36px',
               height: '36px',
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(99,102,241,0.2))',
+              background: '#eef2ff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--accent-cyan)'
+              color: 'var(--accent-indigo)'
             }}>
               <Key size={20} />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>LLM Provider Settings</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)' }}>LLM Provider Settings</h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Configure reasoning & explanation engines</p>
             </div>
           </div>
@@ -76,9 +77,9 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveKey }) {
               width: '100%',
               padding: '12px 14px',
               borderRadius: '8px',
-              background: 'rgba(15, 23, 42, 0.8)',
+              background: '#ffffff',
               border: '1px solid var(--border-subtle)',
-              color: '#fff',
+              color: 'var(--text-main)',
               fontFamily: 'var(--font-mono)',
               fontSize: '0.9rem',
               outline: 'none'
@@ -89,10 +90,10 @@ export default function ApiKeyModal({ isOpen, onClose, apiKey, onSaveKey }) {
           </p>
         </div>
 
-        <div className="glass-panel" style={{ padding: '14px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+        <div className="glass-panel" style={{ padding: '14px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'flex-start', background: '#f8fafc' }}>
           <ShieldCheck size={20} style={{ color: 'var(--accent-emerald)', flexShrink: 0, marginTop: '2px' }} />
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            <strong style={{ color: '#fff' }}>100% Privacy & Resilience:</strong> Your keys and resume contents are processed securely in memory and never shared or logged.
+            <strong style={{ color: 'var(--text-main)' }}>100% Privacy & Resilience:</strong> Your keys and resume contents are processed securely in memory and never shared or logged.
           </div>
         </div>
 

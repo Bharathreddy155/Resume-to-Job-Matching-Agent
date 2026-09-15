@@ -204,11 +204,11 @@ export default function RecruiterView({
             placeholder="Edit requirements, competencies, or role qualifications..."
             style={{
               width: '100%',
-              background: 'rgba(11, 17, 32, 0.8)',
+              background: '#ffffff',
               border: '1px solid var(--border-subtle)',
               borderRadius: '12px',
               padding: '14px',
-              color: '#fff',
+              color: 'var(--text-main)',
               fontSize: '0.86rem',
               lineHeight: 1.5,
               resize: 'vertical',
@@ -216,7 +216,7 @@ export default function RecruiterView({
               fontFamily: 'var(--font-body)',
               transition: 'border-color 0.2s ease'
             }}
-            onFocus={(e) => e.target.style.borderColor = 'var(--accent-cyan)'}
+            onFocus={(e) => e.target.style.borderColor = 'var(--accent-indigo)'}
             onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
           />
 
@@ -235,7 +235,7 @@ export default function RecruiterView({
                   width: '32px',
                   height: '32px',
                   borderRadius: '8px',
-                  background: 'rgba(99, 102, 241, 0.15)',
+                  background: 'rgba(99, 102, 241, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -258,21 +258,22 @@ export default function RecruiterView({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`glass-panel ${isDragOver ? 'dropzone-active' : ''}`}
               style={{
-                border: isDragOver ? '2px dashed var(--accent-cyan)' : '1px dashed rgba(148, 163, 184, 0.3)',
+                border: isDragOver ? '2px dashed var(--accent-indigo)' : '1px dashed #cbd5e1',
+                borderRadius: '12px',
                 padding: '12px 14px',
                 marginBottom: '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                background: isDragOver ? '#eef2ff' : '#f8fafc',
                 transition: 'all 0.2s ease'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <UploadCloud size={22} color={isDragOver ? 'var(--accent-cyan)' : 'var(--accent-indigo)'} />
+                <UploadCloud size={22} color="var(--accent-indigo)" />
                 <div>
-                  <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#fff' }}>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-main)' }}>
                     {multiUploadLoading ? 'Parsing Resumes...' : 'Drag & Drop Multiple Resumes'}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
@@ -306,10 +307,11 @@ export default function RecruiterView({
                     alignItems: 'center',
                     gap: '6px',
                     fontSize: '0.78rem',
-                    background: 'rgba(30, 41, 59, 0.4)'
+                    background: '#f1f5f9',
+                    border: '1px solid #e2e8f0'
                   }}
                 >
-                  <span style={{ color: '#fff', fontWeight: 500 }}>{c.name}</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{c.name}</span>
                   <button
                     onClick={() => setCandidateList(candidateList.filter((_, i) => i !== idx))}
                     style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem', lineHeight: 1 }}
@@ -371,16 +373,18 @@ export default function RecruiterView({
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               
               {/* Tier Filters */}
-              <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.8)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', background: '#f1f5f9', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                 <button
                   onClick={() => setTierFilter('all')}
                   className="secondary-btn"
                   style={{
                     border: 'none',
-                    padding: '4px 8px',
+                    padding: '4px 10px',
                     fontSize: '0.74rem',
-                    background: tierFilter === 'all' ? 'rgba(99, 102, 241, 0.3)' : 'transparent',
-                    color: tierFilter === 'all' ? '#fff' : 'var(--text-muted)'
+                    fontWeight: tierFilter === 'all' ? 700 : 500,
+                    background: tierFilter === 'all' ? '#ffffff' : 'transparent',
+                    color: tierFilter === 'all' ? 'var(--text-main)' : 'var(--text-muted)',
+                    boxShadow: tierFilter === 'all' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
                   All ({batchResults.candidates.length})
@@ -390,10 +394,12 @@ export default function RecruiterView({
                   className="secondary-btn"
                   style={{
                     border: 'none',
-                    padding: '4px 8px',
+                    padding: '4px 10px',
                     fontSize: '0.74rem',
-                    background: tierFilter === 'high' ? 'rgba(16, 185, 129, 0.25)' : 'transparent',
-                    color: tierFilter === 'high' ? '#34d399' : 'var(--text-muted)'
+                    fontWeight: tierFilter === 'high' ? 700 : 500,
+                    background: tierFilter === 'high' ? '#ffffff' : 'transparent',
+                    color: tierFilter === 'high' ? '#047857' : 'var(--text-muted)',
+                    boxShadow: tierFilter === 'high' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
                   Top Fits (≥80%)
@@ -403,10 +409,12 @@ export default function RecruiterView({
                   className="secondary-btn"
                   style={{
                     border: 'none',
-                    padding: '4px 8px',
+                    padding: '4px 10px',
                     fontSize: '0.74rem',
-                    background: tierFilter === 'mod' ? 'rgba(245, 158, 11, 0.25)' : 'transparent',
-                    color: tierFilter === 'mod' ? '#fbbf24' : 'var(--text-muted)'
+                    fontWeight: tierFilter === 'mod' ? 700 : 500,
+                    background: tierFilter === 'mod' ? '#ffffff' : 'transparent',
+                    color: tierFilter === 'mod' ? '#b45309' : 'var(--text-muted)',
+                    boxShadow: tierFilter === 'mod' ? 'var(--shadow-sm)' : 'none'
                   }}
                 >
                   60-79%
@@ -422,11 +430,11 @@ export default function RecruiterView({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
-                    background: 'rgba(15, 23, 42, 0.8)',
+                    background: '#ffffff',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: '8px',
                     padding: '6px 12px 6px 30px',
-                    color: '#fff',
+                    color: 'var(--text-main)',
                     fontSize: '0.8rem',
                     outline: 'none',
                     width: '180px'
@@ -622,7 +630,7 @@ export default function RecruiterView({
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.82)',
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
           backdropFilter: 'blur(12px)',
           display: 'flex',
           alignItems: 'center',
@@ -636,8 +644,9 @@ export default function RecruiterView({
             maxHeight: '92vh',
             overflowY: 'auto',
             padding: '32px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            boxShadow: '0 25px 70px rgba(0,0,0,0.85)'
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            boxShadow: 'var(--shadow-lg)'
           }}>
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -650,7 +659,7 @@ export default function RecruiterView({
                 />
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{selectedCandidateModal.name}</h3>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{selectedCandidateModal.name}</h3>
                     <span className={`badge badge-${selectedCandidateModal.tier_color}`}>
                       Rank #{selectedCandidateModal.rank} Leaderboard Fit
                     </span>
@@ -670,36 +679,36 @@ export default function RecruiterView({
             </div>
 
             {/* AI Executive Summary */}
-            <div className="glass-panel" style={{ padding: '18px', marginBottom: '20px', borderLeft: `4px solid var(--accent-${selectedCandidateModal.tier_color})` }}>
+            <div className="glass-panel" style={{ padding: '18px', marginBottom: '20px', borderLeft: `4px solid var(--accent-${selectedCandidateModal.tier_color})`, background: '#f8fafc' }}>
               <div style={{ fontSize: '0.78rem', color: 'var(--text-dim)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Executive Evaluation Narrative
               </div>
-              <p style={{ fontSize: '0.92rem', color: '#f1f5f9', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.92rem', color: 'var(--text-main)', lineHeight: 1.6 }}>
                 {selectedCandidateModal.explanation?.summary}
               </p>
             </div>
 
             {/* Factor Breakdown */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
-              <div className="glass-panel" style={{ padding: '12px' }}>
+              <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Skills (50%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
                   {selectedCandidateModal.breakdown.skill_match}%
                 </div>
               </div>
-              <div className="glass-panel" style={{ padding: '12px' }}>
+              <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Experience (25%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-indigo)' }}>
                   {selectedCandidateModal.breakdown.experience_alignment}%
                 </div>
               </div>
-              <div className="glass-panel" style={{ padding: '12px' }}>
+              <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Domain (15%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-purple)' }}>
                   {selectedCandidateModal.breakdown.domain_context}%
                 </div>
               </div>
-              <div className="glass-panel" style={{ padding: '12px' }}>
+              <div className="glass-panel" style={{ padding: '12px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Degree (10%)</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-emerald)' }}>
                   {selectedCandidateModal.breakdown.education_credentials}%
@@ -711,7 +720,7 @@ export default function RecruiterView({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '22px' }}>
               
               {/* Direct Matches */}
-              <div className="glass-panel" style={{ padding: '16px' }}>
+              <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={16} /> Direct Matches ({selectedCandidateModal.exact_matches.length})
                 </div>
@@ -725,7 +734,7 @@ export default function RecruiterView({
               </div>
 
               {/* Semantic Bridges */}
-              <div className="glass-panel" style={{ padding: '16px' }}>
+              <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Sparkles size={16} /> Semantic Bridges ({selectedCandidateModal.semantic_matches?.length || 0})
                 </div>
@@ -734,10 +743,10 @@ export default function RecruiterView({
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>No semantic bridges applied</span>
                   ) : (
                     selectedCandidateModal.semantic_matches.map((m, idx) => (
-                      <div key={idx} style={{ fontSize: '0.78rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ color: '#fff', fontWeight: 600 }}>{m.matched_via}</span>
+                      <div key={idx} style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{m.matched_via}</span>
                         <ArrowRight size={12} color="var(--accent-cyan)" />
-                        <span style={{ color: 'var(--accent-cyan)' }}>{m.skill}</span>
+                        <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{m.skill}</span>
                       </div>
                     ))
                   )}
@@ -745,7 +754,7 @@ export default function RecruiterView({
               </div>
 
               {/* Critical Missing Skills */}
-              <div className="glass-panel" style={{ padding: '16px' }}>
+              <div className="glass-panel" style={{ padding: '16px', background: '#f8fafc' }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--accent-rose)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <AlertTriangle size={16} /> Critical Gaps ({selectedCandidateModal.missing_critical.length})
                 </div>
@@ -765,13 +774,13 @@ export default function RecruiterView({
             </div>
 
             {/* Recruiter Probing Questions */}
-            <div className="glass-panel" style={{ padding: '18px', borderLeft: '4px solid var(--accent-purple)' }}>
+            <div className="glass-panel" style={{ padding: '18px', borderLeft: '4px solid var(--accent-purple)', background: '#f8fafc' }}>
               <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--accent-purple)', marginBottom: '10px' }}>
                 Recommended Interview Probing Script
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {selectedCandidateModal.explanation?.recruiter_interview_questions?.map((q, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', fontSize: '0.85rem', color: '#cbd5e1' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', fontSize: '0.85rem', color: 'var(--text-main)' }}>
                     <span>• {q}</span>
                     <button
                       onClick={() => copyProbingQuestion(q, `probe_modal_${idx}`)}
