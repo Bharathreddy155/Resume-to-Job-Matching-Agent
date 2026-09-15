@@ -85,6 +85,13 @@ async def upload_and_save_resume(file: UploadFile = File(...)):
     try:
         content = await file.read()
         parsed = parse_document(content, file.filename)
+        text = parsed.get("text", "").strip()
+        if not text or len(text) < 15:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract readable text from this file. The document may be an image-only scan or password-protected. Please paste the resume text directly into the text box below."
+            )
+
         meta = parsed["metadata"]
         candidate_name = meta.get("name")
         if not candidate_name or candidate_name == "Candidate":
@@ -97,7 +104,7 @@ async def upload_and_save_resume(file: UploadFile = File(...)):
         saved = save_resume(
             resume_id=resume_id,
             name=candidate_name,
-            text=parsed["text"],
+            text=text,
             filename=file.filename,
             headline=f"Uploaded • {exp} yrs exp" if exp else "Uploaded Resume",
             is_sample=False
@@ -108,6 +115,8 @@ async def upload_and_save_resume(file: UploadFile = File(...)):
             "resume": saved,
             "metadata": meta
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to upload resume: {str(e)}")
 

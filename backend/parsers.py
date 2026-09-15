@@ -19,13 +19,45 @@ KNOWN_CERTIFICATIONS = [
 ]
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extract clean text from PDF bytes."""
-    reader = PdfReader(io.BytesIO(file_bytes))
+    """Extract clean text from PDF bytes using pdfplumber with pypdf fallback."""
     text_parts = []
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text_parts.append(page_text)
+
+    # 1. Primary: pdfplumber (best for modern resumes, multi-columns, tables)
+    try:
+        import pdfplumber
+        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
+            for page in pdf.pages:
+                t = page.extract_text(layout=True) or page.extract_text()
+                if t and t.strip():
+                    text_parts.append(t.strip())
+        extracted = "\n".join(text_parts).strip()
+        if len(extracted) > 20:
+            return extracted
+    except Exception:
+        pass
+
+    # 2. Secondary fallback: pypdf
+    try:
+        reader = PdfReader(io.BytesIO(file_bytes))
+        if reader.is_encrypted:
+            try:
+                reader.decrypt("")
+            except Exception:
+                pass
+        pypdf_parts = []
+        for page in reader.pages:
+            try:
+                page_text = page.extract_text(extraction_mode="layout") or page.extract_text()
+            except Exception:
+                page_text = page.extract_text()
+            if page_text and page_text.strip():
+                pypdf_parts.append(page_text.strip())
+        extracted = "\n".join(pypdf_parts).strip()
+        if len(extracted) > 20:
+            return extracted
+    except Exception:
+        pass
+
     return "\n".join(text_parts).strip()
 
 def extract_text_from_docx(file_bytes: bytes) -> str:

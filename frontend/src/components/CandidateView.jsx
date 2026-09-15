@@ -40,6 +40,7 @@ export default function CandidateView({
   const [isDragOver, setIsDragOver] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState('');
+  const [uploadErrorMsg, setUploadErrorMsg] = useState('');
 
   // Sync state if initial resumes list loads later
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function CandidateView({
     if (!file) return;
     setUploadLoading(true);
     setUploadSuccessMsg('');
+    setUploadErrorMsg('');
 
     try {
       if (onUploadResume) {
@@ -69,7 +71,7 @@ export default function CandidateView({
       }
     } catch (err) {
       console.error('File upload failed:', err);
-      alert('Error parsing and saving document: ' + err.message);
+      setUploadErrorMsg(err.message || 'Could not parse document. If it is a scanned PDF, please paste the text directly into the text area below.');
     } finally {
       setUploadLoading(false);
     }
@@ -280,6 +282,31 @@ export default function CandidateView({
             </div>
           )}
 
+          {/* Upload Error Banner */}
+          {uploadErrorMsg && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#991b1b',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              marginBottom: '12px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '8px'
+            }}>
+              <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div>{uploadErrorMsg}</div>
+                <div style={{ fontWeight: 400, marginTop: '4px', fontSize: '0.78rem', color: '#7f1d1d' }}>
+                  Tip: If your resume is an image/scanned PDF, copy the text and paste it into the text area below.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Drag-and-Drop / Browse File Upload Area */}
           <div
             onDragOver={handleDragOver}
@@ -375,7 +402,7 @@ export default function CandidateView({
       </div>
 
       {/* Match Results Display */}
-      {matchResult && (
+      {matchResult && matchResult.match_result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
           
           {/* Executive Overview Banner */}

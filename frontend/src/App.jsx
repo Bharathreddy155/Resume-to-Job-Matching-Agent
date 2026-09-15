@@ -110,13 +110,12 @@ export default function App() {
       body: formData
     });
 
+    const data = await res.json();
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Failed to parse resume');
+      throw new Error(data.detail || 'Failed to parse resume');
     }
 
-    const data = await res.json();
-    if (data.resume) {
+    if (data.resume && data.resume.text && data.resume.text.trim()) {
       setAllResumes(prev => [data.resume, ...prev.filter(r => r.id !== data.resume.id)]);
       
       // Auto-trigger single match with current job description
@@ -142,8 +141,12 @@ export default function App() {
     }
   };
 
-  // Run single match (Candidate View)
+  // Run single match (Candidate View) with robust error checks
   const handleMatchSingle = async (payload) => {
+    if (!payload?.resume_text || !payload.resume_text.trim()) {
+      console.warn("Skipping match: empty resume text");
+      return null;
+    }
     setMatchLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/match-single`, {
@@ -152,10 +155,15 @@ export default function App() {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (!res.ok || !data.match_result) {
+        console.error('Match failed:', data);
+        return null;
+      }
       setCandidateMatchResult(data);
       return data;
     } catch (err) {
       console.error('Match failed:', err);
+      return null;
     } finally {
       setMatchLoading(false);
     }
