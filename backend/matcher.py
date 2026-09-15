@@ -15,14 +15,12 @@ from skill_ontology import (
 def extract_skills_from_text(text: str) -> Dict[str, Dict[str, Any]]:
     """
     Extract skills from free-form text using ontology and regex boundaries.
-    Returns dictionary of canonical_skill -> {canonical, display_name, category, occurrences}
+    Returns dictionary of canonical_skill -> {canonical, display_name, category, count}
     """
     text_lower = text.lower()
     extracted: Dict[str, Dict[str, Any]] = {}
 
-    # Check each alias and canonical key
     for phrase, canonical in ALIAS_TO_CANONICAL.items():
-        # Word boundary pattern; handling special characters like c++, c#, .js, /
         escaped_phrase = re.escape(phrase)
         pattern = r'(?:^|[\s,;:\(\{\[/])' + escaped_phrase + r'(?:$|[\s,;:\)\}\]./])'
         matches = list(re.finditer(pattern, text_lower))
@@ -37,7 +35,7 @@ def extract_skills_from_text(text: str) -> Dict[str, Dict[str, Any]]:
             else:
                 extracted[canonical]["count"] += len(matches)
 
-    # Clean display name exceptions
+    # Clean display name formatting exceptions
     name_overrides = {
         "fastapi": "FastAPI",
         "react": "React.js",
@@ -46,19 +44,27 @@ def extract_skills_from_text(text: str) -> Dict[str, Dict[str, Any]]:
         "vue": "Vue.js",
         "aws": "AWS",
         "gcp": "Google Cloud (GCP)",
-        "azure": "Azure",
+        "azure": "Microsoft Azure",
         "ci/cd": "CI/CD",
         "sql": "SQL",
         "postgresql": "PostgreSQL",
         "mysql": "MySQL",
         "mongodb": "MongoDB",
         "graphql": "GraphQL",
+        "grpc": "gRPC",
         "rest apis": "RESTful APIs",
         "nlp": "NLP",
         "large language models": "LLMs / GenAI",
         "c++": "C++",
+        "c#": "C# (.NET)",
         "html/css": "HTML5 / CSS3",
-        "system design": "System Design"
+        "system design": "System Design",
+        "apache spark": "Apache Spark",
+        "apache kafka": "Apache Kafka",
+        "apache airflow": "Apache Airflow",
+        "react native": "React Native",
+        "cybersecurity": "Cybersecurity & Auth",
+        "monitoring & observability": "Observability & Telemetry"
     }
 
     for k, v in extracted.items():
@@ -71,8 +77,8 @@ def parse_job_requirements(jd_text: str) -> Dict[str, Any]:
     """Parse skills, requirements, and minimum experience from Job Description."""
     extracted_skills = extract_skills_from_text(jd_text)
 
-    # Detect experience requirement (e.g. "3+ years", "minimum 5 years")
-    req_exp = 2.0  # default reasonable baseline
+    # Detect required experience
+    req_exp = 2.0
     exp_matches = re.findall(r'(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?\s+(?:experience|exp|relevant|software)', jd_text, re.IGNORECASE)
     if exp_matches:
         try:
@@ -80,7 +86,7 @@ def parse_job_requirements(jd_text: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # Split into sections to classify critical (must have) vs secondary (nice to have)
+    # Critical vs Preferred section analysis
     critical_skills = set()
     secondary_skills = set()
 
@@ -110,12 +116,10 @@ def parse_job_requirements(jd_text: str) -> Dict[str, Any]:
         pref_skills = extract_skills_from_text(pref_text)
         secondary_skills.update(pref_skills.keys())
 
-    # Remaining skills in JD default to critical if not in preferred
     for s in extracted_skills.keys():
         if s not in secondary_skills:
             critical_skills.add(s)
 
-    # Ensure secondary does not overlap critical
     secondary_skills = secondary_skills - critical_skills
 
     return {
@@ -133,12 +137,6 @@ def compute_semantic_skill_matrix(
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], float]:
     """
     Computes exact, semantic/related, and missing skills.
-    Returns:
-    - exact_matches
-    - semantic_matches
-    - missing_critical
-    - missing_secondary
-    - skill_match_ratio (0.0 to 1.0)
     """
     resume_keys = set(resume_skills.keys())
     exact_matches = []
@@ -156,7 +154,6 @@ def compute_semantic_skill_matrix(
         total_weight += weight
 
         if jd_key in resume_keys:
-            # Exact or alias match
             covered_jd_skills.add(jd_key)
             earned_weight += weight
             exact_matches.append({
@@ -166,17 +163,15 @@ def compute_semantic_skill_matrix(
                 "match_type": "Exact / Direct Match",
                 "similarity_score": 1.0,
                 "importance": "Critical" if is_critical else "Preferred",
-                "explanation": f"Candidate explicitly demonstrates direct proficiency in {jd_info['display_name']}."
+                "explanation": f"Candidate demonstrates direct production proficiency in {jd_info['display_name']}."
             })
         else:
-            # Check semantic relationship in ontology
             related = get_related_skills(jd_key)
             found_related = [r for r in related if r in resume_keys]
 
             if found_related:
                 covered_jd_skills.add(jd_key)
-                # Partial semantic credit (75% of weight)
-                earned_weight += weight * 0.75
+                earned_weight += weight * 0.80
                 related_names = [resume_skills[r]["display_name"] for r in found_related]
                 semantic_matches.append({
                     "skill": jd_info["display_name"],
@@ -189,13 +184,12 @@ def compute_semantic_skill_matrix(
                     "explanation": f"Candidate possesses equivalent technology ({', '.join(related_names)}) which translates directly to {jd_info['display_name']}."
                 })
             else:
-                # Missing
                 missing_item = {
                     "skill": jd_info["display_name"],
                     "canonical": jd_key,
                     "category": jd_info["category"],
                     "importance": "Critical" if is_critical else "Preferred",
-                    "recommendation": f"Acquire practical projects or certification in {jd_info['display_name']}."
+                    "recommendation": f"Acquire practical project experience or certification in {jd_info['display_name']}."
                 }
                 if is_critical:
                     missing_critical.append(missing_item)
@@ -217,7 +211,7 @@ def compute_overall_compatibility(
     - Skill Match: 50%
     - Experience Alignment: 25%
     - Domain / Content Semantic Similarity (TF-IDF Cosine Sim): 15%
-    - Education / Credential Fit: 10%
+    - Education & Credentials Fit: 10%
     """
     resume_skills = extract_skills_from_text(resume_text)
     jd_skills = jd_analysis["all_skills"]
@@ -226,24 +220,22 @@ def compute_overall_compatibility(
     req_exp = jd_analysis.get("required_experience_years", 2.0)
     candidate_exp = resume_metadata.get("detected_experience_years", 0.0)
 
-    # 1. Semantic Skill Match
+    # 1. Semantic Skill Match (50%)
     exact_matches, semantic_matches, missing_critical, missing_secondary, skill_ratio = compute_semantic_skill_matrix(
         resume_skills, jd_skills, critical_skills, secondary_skills
     )
     skill_score = min(round(skill_ratio * 100, 1), 100.0)
 
-    # 2. Experience Score
+    # 2. Experience Score (25%)
     if req_exp <= 0:
         exp_score = 90.0
     elif candidate_exp >= req_exp:
-        # Full points plus bonus for senior experience up to 100
         surplus = min((candidate_exp - req_exp) * 3.0, 10.0)
         exp_score = min(90.0 + surplus, 100.0)
     else:
-        # Proportion of required experience
         exp_score = max(round((candidate_exp / req_exp) * 80.0, 1), 20.0)
 
-    # 3. Domain & Content Semantic Cosine Similarity (TF-IDF vectorizer on full document)
+    # 3. Domain & Content Semantic Cosine Similarity (15%)
     try:
         vectorizer = TfidfVectorizer(stop_words='english', max_features=3000, ngram_range=(1, 2))
         tfidf_matrix = vectorizer.fit_transform([resume_text, jd_text])
@@ -252,8 +244,10 @@ def compute_overall_compatibility(
     except Exception:
         domain_score = 70.0
 
-    # 4. Education Fit
+    # 4. Education & Credentials Fit (10%)
     edu_text = resume_metadata.get("education", "").lower()
+    certs = resume_metadata.get("certifications", [])
+
     if "phd" in edu_text:
         edu_score = 100.0
     elif "master" in edu_text:
@@ -262,6 +256,10 @@ def compute_overall_compatibility(
         edu_score = 85.0
     else:
         edu_score = 75.0
+
+    # Certification bonus (up to +10 bonus points on credentials)
+    if certs:
+        edu_score = min(edu_score + (len(certs) * 5.0), 100.0)
 
     # Weighted composite score
     overall_score = round(
@@ -294,7 +292,7 @@ def compute_overall_compatibility(
             "skill_match": skill_score,
             "experience_alignment": exp_score,
             "domain_context": domain_score,
-            "education_credentials": edu_score
+            "education_credentials": round(edu_score, 1)
         },
         "stats": {
             "total_jd_skills": len(jd_skills),
@@ -303,7 +301,8 @@ def compute_overall_compatibility(
             "missing_critical_count": len(missing_critical),
             "missing_secondary_count": len(missing_secondary),
             "candidate_exp_years": candidate_exp,
-            "required_exp_years": req_exp
+            "required_exp_years": req_exp,
+            "certifications_detected": len(certs)
         },
         "exact_matches": exact_matches,
         "semantic_matches": semantic_matches,

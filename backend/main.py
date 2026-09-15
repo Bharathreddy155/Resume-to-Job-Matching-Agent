@@ -1,12 +1,16 @@
 import os
+import io
+import csv
 from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from parsers import parse_document, extract_candidate_metadata
 from matcher import parse_job_requirements, compute_overall_compatibility
+from skill_ontology import SKILL_TAXONOMY
 from ai_explainer import explain_match
 from sample_data import SAMPLE_JOBS, SAMPLE_RESUMES
 
@@ -15,7 +19,7 @@ load_dotenv()
 app = FastAPI(
     title="Intelligent Resume-to-Job Matching Agent",
     description="Production-grade semantic matching and scoring engine for candidate resumes and job descriptions.",
-    version="1.0.0"
+    version="1.1.0"
 )
 
 # Allow CORS for local frontend development
@@ -45,12 +49,17 @@ class MatchBatchRequest(BaseModel):
     candidates: List[CandidateInput]
     api_key: Optional[str] = None
 
+class ExportCsvRequest(BaseModel):
+    job_title: Optional[str] = "Target Role"
+    candidates: List[Dict[str, Any]]
+
 @app.get("/api/health")
 def health_check():
     return {
         "status": "healthy",
         "service": "Resume-to-Job Matching Engine",
-        "version": "1.0.0"
+        "version": "1.1.0",
+        "total_ontology_skills": len(SKILL_TAXONOMY)
     }
 
 @app.get("/api/sample-data")
@@ -60,6 +69,17 @@ def get_sample_data():
         "jobs": SAMPLE_JOBS,
         "resumes": SAMPLE_RESUMES
     }
+
+@app.get("/api/skills-catalog")
+def get_skills_catalog():
+    """Return categorized skill ontology for UI auto-complete or explorer."""
+    catalog: Dict[str, List[str]] = {}
+    for skill, info in SKILL_TAXONOMY.items():
+        cat = info.get("category", "General")
+        if cat not in catalog:
+            catalog[cat] = []
+        catalog[cat].append(skill.title() if len(skill) > 3 else skill.upper())
+    return catalog
 
 @app.post("/api/parse-resume")
 async def parse_resume_file(file: UploadFile = File(...)):
@@ -87,14 +107,11 @@ def match_single_resume(payload: MatchSingleRequest):
     if not payload.job_description.strip():
         raise HTTPException(status_code=400, detail="Job description cannot be empty.")
 
-    # 1. Parse metadata if not provided
     metadata = payload.candidate_metadata or extract_candidate_metadata(payload.resume_text)
     candidate_name = payload.candidate_name or metadata.get("name", "Candidate")
 
-    # 2. Parse JD requirements
     jd_analysis = parse_job_requirements(payload.job_description)
 
-    # 3. Compute semantic match and compatibility score
     match_result = compute_overall_compatibility(
         payload.resume_text,
         payload.job_description,
@@ -102,7 +119,6 @@ def match_single_resume(payload: MatchSingleRequest):
         jd_analysis
     )
 
-    # 4. Generate AI explanation and recommendations
     explanation = explain_match(match_result, candidate_name, payload.api_key)
 
     return {
@@ -159,7 +175,6 @@ def match_batch_resumes(payload: MatchBatchRequest):
     # Sort descending by overall score
     ranked_candidates.sort(key=lambda x: x["overall_score"], reverse=True)
 
-    # Assign ranks
     for rank_idx, cand in enumerate(ranked_candidates, start=1):
         cand["rank"] = rank_idx
 
@@ -169,6 +184,53 @@ def match_batch_resumes(payload: MatchBatchRequest):
         "required_skills_count": len(jd_analysis["all_skills"]),
         "candidates": ranked_candidates
     }
+
+@app.post("/api/export-shortlist-csv")
+def export_shortlist_csv(payload: ExportCsvRequest):
+    """Generate and stream a professional CSV export of ranked candidates for recruiters."""
+    output = io.StringIO()
+    # Write UTF-8 BOM so Microsoft Excel renders accented characters and symbols properly
+    output.write('\ufeff')
+    writer = csv.writer(output)
+
+    writer.writerow([
+        "Rank",
+        "Candidate Name",
+        "Overall Compatibility Score (%)",
+        "Match Tier",
+        "Experience (Years)",
+        "Education",
+        "Direct Matched Skills",
+        "Semantic Equivalent Matches",
+        "Critical Missing Skills",
+        "Executive AI Evaluation"
+    ])
+
+    for c in payload.candidates:
+        exact_str = ", ".join([m.get("skill", "") for m in c.get("exact_matches", [])])
+        semantic_str = ", ".join([f"{m.get('skill', '')} (via {m.get('matched_via', '')})" for m in c.get("semantic_matches", [])])
+        gaps_str = ", ".join([g.get("skill", "") for g in c.get("missing_critical", [])])
+
+        writer.writerow([
+            c.get("rank", ""),
+            c.get("name", ""),
+            c.get("overall_score", ""),
+            c.get("match_tier", ""),
+            c.get("stats", {}).get("candidate_exp_years", ""),
+            c.get("metadata", {}).get("education", ""),
+            exact_str,
+            semantic_str,
+            gaps_str,
+            c.get("explanation", {}).get("summary", "")
+        ])
+
+    output.seek(0)
+    filename = f"MatchPulse_Candidate_Rankings_{payload.job_title.replace(' ', '_')}.csv"
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
 
 if __name__ == "__main__":
     import uvicorn
