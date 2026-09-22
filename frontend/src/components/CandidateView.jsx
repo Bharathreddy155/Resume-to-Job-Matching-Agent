@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import ScoreDial from './ScoreDial';
 import confetti from 'canvas-confetti';
+import CandidateIntelligenceRAG from './CandidateIntelligenceRAG';
 
 export default function CandidateView({
   jobDescription,
@@ -768,6 +769,17 @@ export default function CandidateView({
               </div>
 
             </div>
+          </div>
+
+          {/* AI Candidate Intelligence (RAG Q&A) Panel */}
+          <div style={{ marginTop: '28px' }}>
+            <CandidateIntelligenceRAG
+              candidateId={selectedResumeId}
+              candidateName={candidateName}
+              jobDescription={jobDescription}
+              allowPoolSearch={true}
+              title={`AI Candidate Intelligence (RAG Q&A) • ${candidateName}`}
+            />
           </div>
 
         </div>

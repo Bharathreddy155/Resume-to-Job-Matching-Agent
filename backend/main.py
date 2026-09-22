@@ -17,6 +17,7 @@ from skill_ontology import SKILL_TAXONOMY
 from ai_explainer import explain_match
 from sample_data import SAMPLE_JOBS
 from database import get_all_resumes, save_resume, delete_resume
+from rag_engine import ResumeRAGRetriever, answer_rag_query, get_suggested_queries
 
 load_dotenv()
 
@@ -56,6 +57,25 @@ class MatchBatchRequest(BaseModel):
 class ExportCsvRequest(BaseModel):
     job_title: Optional[str] = "Target Role"
     candidates: List[Dict[str, Any]]
+
+class RAGQueryRequest(BaseModel):
+    query: str
+    candidate_id: Optional[str] = None
+    job_description: Optional[str] = None
+    top_k: Optional[int] = 3
+    api_key: Optional[str] = None
+
+# In-memory RAG retriever instance with auto-refresh when candidate database changes
+_rag_retriever: Optional[ResumeRAGRetriever] = None
+_last_resume_count: int = -1
+
+def get_or_create_rag_retriever() -> ResumeRAGRetriever:
+    global _rag_retriever, _last_resume_count
+    resumes = get_all_resumes()
+    if _rag_retriever is None or len(resumes) != _last_resume_count:
+        _rag_retriever = ResumeRAGRetriever(resumes)
+        _last_resume_count = len(resumes)
+    return _rag_retriever
 
 @app.get("/api/health")
 def health_check():
@@ -293,6 +313,48 @@ def export_shortlist_csv(payload: ExportCsvRequest):
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+@app.post("/api/rag/query")
+def query_rag_endpoint(payload: RAGQueryRequest):
+    """
+    Retrieval-Augmented Generation (RAG) query endpoint.
+    Retrieves the top-k most relevant resume chunks and synthesizes a grounded answer with citations.
+    """
+    if not payload.query or not payload.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty.")
+
+    retriever = get_or_create_rag_retriever()
+
+    candidate_name = None
+    if payload.candidate_id:
+        for r in get_all_resumes():
+            if r.get("id") == payload.candidate_id:
+                candidate_name = r.get("name")
+                break
+
+    return answer_rag_query(
+        query=payload.query.strip(),
+        retriever=retriever,
+        candidate_id=payload.candidate_id,
+        candidate_name=candidate_name,
+        job_description=payload.job_description,
+        top_k=payload.top_k or 3,
+        api_key=payload.api_key
+    )
+
+@app.get("/api/rag/suggestions")
+def get_rag_suggestions_endpoint(candidate_id: Optional[str] = None):
+    """Provide dynamic, contextual questions for 1-click RAG discovery."""
+    candidate_name = None
+    if candidate_id:
+        for r in get_all_resumes():
+            if r.get("id") == candidate_id:
+                candidate_name = r.get("name")
+                break
+
+    return {
+        "suggestions": get_suggested_queries(candidate_name=candidate_name)
+    }
 
 if __name__ == "__main__":
     import uvicorn

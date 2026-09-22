@@ -26,6 +26,7 @@ import {
   Trash2
 } from 'lucide-react';
 import ScoreDial from './ScoreDial';
+import CandidateIntelligenceRAG from './CandidateIntelligenceRAG';
 
 export default function RecruiterView({
   jobDescription,
@@ -704,6 +705,15 @@ export default function RecruiterView({
         </div>
       )}
 
+      {/* Pool-Wide Candidate Intelligence RAG */}
+      <CandidateIntelligenceRAG
+        candidateId={null}
+        candidateName={null}
+        jobDescription={jobDescription}
+        allowPoolSearch={false}
+        title="Applicant Pool Intelligence (RAG Search)"
+      />
+
       {/* Candidate Deep-Dive Audit Modal */}
       {selectedCandidateModal && (
         <div style={{
@@ -872,6 +882,17 @@ export default function RecruiterView({
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Candidate Deep-Dive RAG Q&A */}
+            <div style={{ marginTop: '20px' }}>
+              <CandidateIntelligenceRAG
+                candidateId={selectedCandidateModal.id}
+                candidateName={selectedCandidateModal.name}
+                jobDescription={jobDescription}
+                allowPoolSearch={false}
+                title={`Ask RAG about ${selectedCandidateModal.name}`}
+              />
             </div>
 
             {/* Modal Actions */}
