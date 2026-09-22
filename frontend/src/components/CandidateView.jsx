@@ -683,6 +683,15 @@ export default function CandidateView({
 
           </div>
 
+          {/* AI Candidate Intelligence (RAG Q&A) Panel */}
+          <CandidateIntelligenceRAG
+            candidateId={selectedResumeId}
+            candidateName={candidateName}
+            jobDescription={jobDescription}
+            allowPoolSearch={true}
+            title={`AI Candidate Intelligence (RAG Q&A) • ${candidateName}`}
+          />
+
           {/* AI Action Plan & Strategic Insights */}
           <div className="glass-card" style={{ padding: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -769,17 +778,6 @@ export default function CandidateView({
               </div>
 
             </div>
-          </div>
-
-          {/* AI Candidate Intelligence (RAG Q&A) Panel */}
-          <div style={{ marginTop: '28px' }}>
-            <CandidateIntelligenceRAG
-              candidateId={selectedResumeId}
-              candidateName={candidateName}
-              jobDescription={jobDescription}
-              allowPoolSearch={true}
-              title={`AI Candidate Intelligence (RAG Q&A) • ${candidateName}`}
-            />
           </div>
 
         </div>
